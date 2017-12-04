@@ -1,0 +1,9 @@
+# C extensions
+*.so
+
+# vim temporary files
+.*.*.swp
+
+# .d and .pcm files from class compilation
+*.d
+*.pcm
