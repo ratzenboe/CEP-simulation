@@ -208,7 +208,7 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode)
         /* if ( fDiffrCode != 3 ) break; */
 
         // is detected can be called multiple times as it just sets a bool
-        fIsDetected(fEta);
+        if ( charge != 0. ) fIsDetected(fEta);
         if ( charge == 0. || abs(fEta) > 0.9 ) fWholeEvtDetected = false;
         // check if the right particles are in the evt
         // if ( !setPDGval(pdg) ) hasRightParticlesInTPCITS=false;
