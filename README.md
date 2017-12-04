@@ -22,15 +22,11 @@ EventHandler class.
 As we have to do this every time when we enter root we can automate this process by putting some lines in the
 `~/rootlogon.C` file which is called every time root is called.
 We first let root know where it can find these classes and the corresponding header file in the include directory.
-The files are saved inside the folder `/path/to/folder' and `/path/to/include`
+The files are saved inside the folder `/path/to/folder`
 ```
 {
 // this is copied inide the ~/rootlogon.C file
-gInterpreter->AddIncludePath("/path/to/include");
-evtClassDir      = TString("/path/to/src/");
-```
-The files are loaded automatically by the next lines:
-```
+evtClassDir      = TString("/path/to/folder/");
 load_string      = TString(".L ");
 dirTree_string   = TString("ReadDirectoryTree.cxx++");
 pytTree_string   = TString("ReadPythiaTree.cxx++");
