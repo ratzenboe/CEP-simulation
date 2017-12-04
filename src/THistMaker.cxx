@@ -81,7 +81,7 @@ THistMaker::THistMaker(TString inputFilePath, TString title, Int_t nBins, Double
         if (fHitInAD) continue;
         if (!fWholeEvtDetected) fHist_ad_feedDown->Fill(fInvarMass);
         else fHist_ad_CD->Fill(fInvarMass);
-        fMassCompare->Fill(fInvarMass, fRealInvarMass);
+        fMassCompare->Fill(fRealInvarMass, fInvarMass);
     }
 }
 //_______________________________________________________________________________
