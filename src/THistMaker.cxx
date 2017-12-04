@@ -62,7 +62,7 @@ THistMaker::THistMaker(TString inputFilePath, TString title, Int_t nBins, Double
     fHist_fwd_feedDown     = new TH1F("forwardDet_FeedD", "forward detectors on", nBins, xlo, xhi);
     fHist_ad_feedDown      = new TH1F("ADDet_FeedD", "AD detectors on",           nBins, xlo, xhi);
     // 2D mass comparison histogram
-    fMassCompare         = new TH2D("Mass comparison", "AD det mass comp",
+    fMassCompare           = new TH2D("Mass comparison", "AD det mass comp",
                                                                  nBins, xlo, xhi, nBins, xlo, xhi);
 
 
@@ -235,7 +235,7 @@ void THistMaker::Save2DMassHistInFile(TString outpath)
     feedText.SetTextColor(kRed);
     feedText.DrawLatex(4.5, 2.3, "Feed down events");
     feedLine1.DrawLine(0.7,0.2,0.7,0.6);
-    feedLine1.DrawLine(0.7,0.2,8.*0.9,0.2);
+    feedLine1.DrawLine(0.7,0.2,3.2*0.9,0.2);
     feedLine1.DrawLine(0.7,0.6,3.0,2.9);
 
     c->SaveAs((outpath+"massComparison.pdf").Data());

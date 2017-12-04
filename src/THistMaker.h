@@ -18,7 +18,7 @@ class THistMaker
                             THistMaker(
                                TString inputFilePath="/media/hdd/InvariantMass_output/kaon_evt.root",
                                TString title = "histList.root",  
-                               Int_t nBins=100, Double_t xlo=0.5, Double_t xhi=8.);
+                               Int_t nBins=100, Double_t xlo=0.5, Double_t xhi=3.2);
                             ~THistMaker(void);
         void                SaveHistsInFile(Int_t mode=-1,
             TString outpath="/home/ratzenboe/Documents/Pythia-stuff/InvariantMass_study/HistSave/");
