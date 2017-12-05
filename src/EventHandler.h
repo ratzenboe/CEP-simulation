@@ -63,7 +63,7 @@ class EventHandler : public ReadDirectoryTree, public ReadPythiaTree
             // private member functions
             // overloaded if other particles than 2pi are of interest
             Bool_t              fHasRightNumber(Int_t& Npi, Int_t& Nka);
-            Bool_t              fIsDetected( Double_t eta );
+            void                fIsDetected( Double_t eta );
             Bool_t              setPDGval(Int_t mode = 0);
             Bool_t              EventLooper(Int_t maxEvts);
             void                AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, 
