@@ -23,6 +23,11 @@ class EventHandler : public ReadDirectoryTree, public ReadPythiaTree
             void                ParticleInitializer(Int_t mode=1, Int_t maxEvts=-1);
             TString             GetOutputPath(Int_t mode=0);
         private:
+            // output checks: event listing saved in txt file 
+            // in the output directory
+            ofstream            fb;
+            ostream             &os;
+            // event specific contrainers
             TParticle*          fPart;              // multiple particles in the tree
             Pythia8::Pythia     fPythia;
             Pythia8::Event*     fPythiaEvent;       // pyhtia event

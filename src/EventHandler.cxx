@@ -118,7 +118,13 @@ void EventHandler::ParticleInitializer(Int_t mode, Int_t maxEvts)
 // mode determines what particles are searched for (pipi=0, KK=1)
 void EventHandler::EventInitilizer(Int_t mode, Int_t maxEvts)
 {
-    TString op = fOutpath;
+    // if we have a pythia event
+    // we can write the event in a txt file
+    std::filebuf fb;
+    fb.open((fOutpath+"eventInfo.txt").Data(), std::ios::out);
+    std::ostream os(&fb);
+    //#################################################################
+     TString op = fOutpath;
     if (mode==0) op += "pi_";
     if (mode==1) op += "kaon_";    
     TFile* o_fEvtFile  = new TFile((op+"evt.root").Data(),  "RECREATE");
@@ -149,6 +155,7 @@ void EventHandler::EventInitilizer(Int_t mode, Int_t maxEvts)
 //_____________________________________________________________________________
 void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode)
 {
+   // event preparation
     fEventNb = iEvent;
     Int_t evtsize;
     if (fKin)      evtsize = fEvtTree->GetEntries();
