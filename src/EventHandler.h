@@ -19,7 +19,8 @@ class EventHandler : public ReadDirectoryTree, public ReadPythiaTree
                                 ~EventHandler(void);
             /* void                CreateOutputObjects(Int_t maxEvts=-1); */
                                 // mode 1 = KK, mode 0 = 2pi
-            void                EventInitilizer(    Int_t mode=1, Int_t maxEvts=-1);
+            void                EventInitilizer(    Int_t mode=1, Int_t maxEvts=-1, 
+                                                                  Bool_t saveEvtInfo=false);
             void                ParticleInitializer(Int_t mode=1, Int_t maxEvts=-1);
             TString             GetOutputPath(Int_t mode=0);
         private:
@@ -65,7 +66,8 @@ class EventHandler : public ReadDirectoryTree, public ReadPythiaTree
             Bool_t              fIsDetected( Double_t eta );
             Bool_t              setPDGval(Int_t mode = 0);
             Bool_t              EventLooper(Int_t maxEvts);
-            void                AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode);
+            void                AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, 
+                                                                        Bool_t saveEvtInfo=false);
 };
 
 #endif

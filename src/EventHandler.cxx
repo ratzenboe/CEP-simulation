@@ -123,7 +123,7 @@ void EventHandler::ParticleInitializer(Int_t mode, Int_t maxEvts)
 }
 //_____________________________________________________________________________
 // mode determines what particles are searched for (pipi=0, KK=1)
-void EventHandler::EventInitilizer(Int_t mode, Int_t maxEvts)
+void EventHandler::EventInitilizer(Int_t mode, Int_t maxEvts, Bool_t saveEvtInfo)
 {
     TString op = fOutpath;
     if (mode==0) op += "pi_";
@@ -145,7 +145,7 @@ void EventHandler::EventInitilizer(Int_t mode, Int_t maxEvts)
     if (fKin) SetIEntryKin(0);
     while(EventLooper(maxEvts)){
         if (iEvent%1000 == 0) cout << iEvent << " events processed" << endl;
-        AnalyseEvent(iEvent, fOutTreeEvt, mode);
+        AnalyseEvent(iEvent, fOutTreeEvt, mode, saveEvtInfo);
         iEvent++;
     }
     o_fEvtFile->cd();
