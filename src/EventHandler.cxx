@@ -23,6 +23,7 @@ void PrintDebug(const char *message){
 #include <TSystem.h>
 #include <TTree.h>
 #include <TFile.h>
+#include <TMath.h>
 #include <TDatabasePDG.h>
 #include "EventHandler.h"
 #include "ReadDirectoryTree.h"
@@ -176,7 +177,7 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, Bool_t sa
     fHitInAD                   = false;
 
     fDiffrCode = 0;
-    Double_t charge;
+    Double_t charge, phi_det;
     Int_t statCode = 0, pythiaStatCode = 0;
     Double_t mass;
     for (Int_t i = 1; i < evtsize; i++) {
@@ -199,7 +200,6 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, Bool_t sa
             pythiaStatCode = (*fPythiaEvent)[i].status();
             PrintDebug("no problem accessing fPythia");
         } 
-
         if ( fPdg == 9900110 ){
             fDiffrCode = 3; 
             if (fKin) fRealInvarMass = fPart->GetCalcMass();
@@ -217,18 +217,38 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, Bool_t sa
 
         // is detected can be called multiple times as it just sets a bool
         // fIsDetected can only be called by charged particles
-        if ( charge != 0. ) fIsDetected(fEta);
+        if (abs(fEta) < 1.7 && fPt =< 0.12 && charge != 0. && pythiaStatCode!=14){
+            fWholeEvtDetected = false;
+            continue; 
+        }
+        if ( charge != 0. && fPt > 0.12) {
+            // fIsDetected is only true if a particle is in the ITS/TPC area
+            // between abs(eta) from 0.9 to 1.7
+            if (fIsDetected(fEta)) {
+                fHasRightParticlesInTPCITS = false;
+                continue;
+            }
+        }
+        // emcal hit
+        phi_det = fPhi * 180./ TMath::Pi();
+        if ( phi_det < 0. ) phi_det += 360.;
+        if ( fPdg == 22 && abs(fEta) < 0.7 ){
+            if ( (phi_det > 80. && phi_det < 187.) || (phi_det > 260. && phi_det < 327.) ){
+            // if ( evt[i].eT() > 0.3 ) { 
+                fGammaInEMCal = true;        
+                fDetGammaEt = (*fPythiaEvent)[i].eT();
+            }
+        }
         if ( charge == 0. || abs(fEta) > 0.9 ) {
             fWholeEvtDetected = false;
             continue;
-        }
-        // check if the right particles are in the evt
+        }        // check if the right particles are in the evt
         // if ( !setPDGval(pdg) ) hasRightParticlesInTPCITS=false;
 
         if (abs(fEta) < 0.9){
             // setPDGval: 1 KK mode
             //            0 pp mode
-            if (!setPDGval(mode)) fHasRightParticlesInTPCITS = false;
+            if (!setPDGval(mode) && fPt > 3.) fHasRightParticlesInTPCITS = false;
             else{
                 vTemp.SetPtEtaPhiM(fPt, fEta, fPhi, mass);
                 vtot += vTemp;
@@ -258,22 +278,13 @@ TString EventHandler::GetOutputPath(Int_t mode)
     else return fOutpath+"part.root";
 }
 //_____________________________________________________________________________
-Bool_t EventHandler::fIsDetected( Double_t eta )
+void EventHandler::fIsDetected( Double_t eta )
 {
-    if ( abs( eta ) < 1.7 && abs( eta ) > 0.9 ) return true;
-    else if((eta>-3.4 && eta<-1.7) || (eta>1.7 && eta<5.1)) {
-        fHitInForwardDets = true;
-        return false;
-    }
-    else if((eta>-3.7 && eta<-1.7) || (eta>2.8 && eta<5.1)) {
-        fHitInForwardDets = true;
-        return false;
-    }
-    else if((eta>-7.0 && eta<-4.9) || (eta>4.8 && eta<6.3)) {
-        fHitInAD = true;
-        return false;
-    }
-    else return false;
+    if ( abs( eta ) < 1.7 && abs( eta ) > 0.9 ) fHasRightParticlesInTPCITS = false;
+    else if((eta>-3.4 && eta<-1.7) || (eta>1.7 && eta<5.1)) fHitInForwardDets = true;
+    else if((eta>-3.7 && eta<-1.7) || (eta>2.8 && eta<5.1)) fHitInForwardDets = true;
+    else if((eta>-7.0 && eta<-4.9) || (eta>4.8 && eta<6.3)) fHitInAD = true;
+    else return ;
 }
 //_____________________________________________________________________________
 Bool_t EventHandler::fHasRightNumber(Int_t& Npi, Int_t& Nka)
