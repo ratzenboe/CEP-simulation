@@ -222,7 +222,7 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, Bool_t sa
         // if fWholeEvtDetected & fHasRightParticlesInTPCITS are true
         // is detected can be called multiple times as it just sets a bool
         // fIsDetected can only be called by charged particles
-        if (abs(fEta) < 1.7 && fPt <= 0.12 && charge != 0. && pythiaStatCode!=14){
+        if (abs(fEta) < 1.7 && fPt <= 0.12 && charge != 0.) {
             fWholeEvtDetected = false;
             continue; 
         }
@@ -305,6 +305,15 @@ Bool_t EventHandler::fHasRightNumber(Int_t& Npi, Int_t& Nka)
         Npi = 0;
         Nka = 4;
         return true;
+    // search for a K-star(892) that decays into pi+/- K-/+ (strong peak in data)
+    } else if ( (fNkaP == 1 && fNkaM == 0) && fNpiP == 0 && fNpiM == 1 ){
+        Npi = 1;
+        Nka = 1;
+        return true;    
+    } else if ( (fNkaP == 0 && fNkaM == 1) && fNpiP == 1 && fNpiM == 0 ){
+        Npi = 1;
+        Nka = 1;
+        return true;    
     } else return false;
 }
 //_____________________________________________________________________________

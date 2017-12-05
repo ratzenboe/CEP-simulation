@@ -18,6 +18,8 @@
 #include <TLine.h>
 #include <TLegend.h>
 #include <TStyle.h>
+#include <iomanip> // setprecision
+#include <sstream> // stringstream
 #include "THistMaker.h"
 
 // class that makes TH1 and TGraphs that are passed to main.
@@ -35,7 +37,7 @@ THistMaker::THistMaker(TString inputFilePath, TString title, Int_t nBins, Double
     fHist_onlyTPC_CD(0), fHist_fwd_CD(0), fHist_ad_CD(0),
     fHist_onlyTPC_feedDown(0), fHist_fwd_feedDown(0), fHist_ad_feedDown(0), fMassCompare(0),
     fDiffrCode(-1), fHitInForwardDets(false), fHitInAD(false), fEventNb(0), fInvarMass(0),
-    fWholeEvtDetected(false), fHasRightParticlesInTPCITS(false)
+    fGammaInEMCal(false), fWholeEvtDetected(false), fHasRightParticlesInTPCITS(false)
 {
     fOutList = new TList();
     TString outFileFolder = "/home/ratzenboe/Documents/Pythia-stuff/InvariantMass_study/HistSave/";
@@ -52,6 +54,7 @@ THistMaker::THistMaker(TString inputFilePath, TString title, Int_t nBins, Double
     fTree->SetBranchAddress("fWholeEvtDetected",          &fWholeEvtDetected);
     fTree->SetBranchAddress("fHitInForwardDets",          &fHitInForwardDets);
     fTree->SetBranchAddress("fHitInAD",                   &fHitInAD);
+    fTree->SetBranchAddress("fGammaInEMCal",              &fGammaInEMCal);
 
     // create the histograms (true CD)
     fHist_onlyTPC_CD       = new TH1F("onlyITS_TPC_CD", "only ITS TPC",           nBins, xlo, xhi);
@@ -117,7 +120,8 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
     TString title;
     if (mode==0) title="TPC_only";
     else if (mode==1) title="Forward";
-    else title="AD";    
+    else if (mode==2) title="AD";
+    else title="EMCal";    
     // we only care for one plot at a time
     TH1F hist_cd;
     TH1F hist_fd;
@@ -127,14 +131,17 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
     } else if (mode==1){
         hist_cd = *((TH1F*)fHist_fwd_CD->Clone());
         hist_fd = *((TH1F*)fHist_fwd_feedDown->Clone());
-    } else {
+    } else if (mode==2){
         hist_cd = *((TH1F*)fHist_ad_CD->Clone());
         hist_fd = *((TH1F*)fHist_ad_feedDown->Clone());
-    } 
+    } else {
+        hist_cd = *((TH1F*)fHist_emc_CD->Clone());
+        hist_fd = *((TH1F*)fHist_emc_feedDown->Clone());
+    }
 
     TCanvas* c = new TCanvas( ("c"+title).Data(), "c", 1500, 1000 );
     gStyle->SetOptStat(0);
-    gPad->SetLogy();
+    /* gPad->SetLogy(); */
     /* // first we make the signal histograms = add CD + feeddown (as we only regard CEP) */
     Double_t xmin  = hist_cd.GetXaxis()->GetXmin();
     Double_t xmax  = hist_cd.GetXaxis()->GetXmax();
@@ -143,16 +150,18 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
     signal_cd_fd.Add(&hist_cd);
     signal_cd_fd.Add(&hist_fd);
     /* // scale the hsitograms */ 
-    Int_t entries = signal_cd_fd.GetEntries();
-    Double_t scale_norm = 1./double(entries);
-    signal_cd_fd.Scale(scale_norm);
-    hist_cd.Scale(scale_norm);
-    hist_fd.Scale(scale_norm);
+    /* Int_t entries = signal_cd_fd.GetEntries(); */
+    /* Double_t scale_norm = 1./double(entries); */
+    /* signal_cd_fd.Scale(scale_norm); */
+    /* hist_cd.Scale(scale_norm); */
+    /* hist_fd.Scale(scale_norm); */
     // Draw the histograms
     // later we care about the style
     signal_cd_fd.Draw("EP");
     hist_cd.Draw("EP same");
     hist_fd.Draw("EP same");
+    /* signal_cd_fd.SetMaximum(1.5*signal_cd_fd.GetMaximum()); */
+    signal_cd_fd.SetMaximum(1300.);
     // maker style and color
     signal_cd_fd.SetMarkerStyle(kFullCircle);
     hist_cd.SetMarkerStyle(kFullSquare);
@@ -162,7 +171,7 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
     signal_cd_fd.SetMarkerSize(1.2);
     hist_cd.SetMarkerColor(9);
     hist_cd.SetMarkerSize(1.2);
-    hist_fd.SetMarkerColor(8);
+    hist_fd.SetMarkerColor(2);
     hist_fd.SetMarkerSize(1.2);
 
     signal_cd_fd.GetYaxis()->SetLabelSize(0.045);
@@ -182,33 +191,54 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
     signal_cd_fd.GetYaxis()->SetTitle("dN/dm_{KK}");
     // SetTitle has to be called after setting the xAxis title!!!!
 
-    /* TLatex latex; */
-    /* latex.SetTextSize(0.06); */
-    /* latex.SetTextAlign(12); */
-    /* Double_t mult = 2; */
-    /* Double_t xMax_K0 = signal_cd_fd.GetBinContent(signal_cd_fd.GetXaxis()->FindBin(0.497))  *mult; */
-    /* Double_t xMax_rho = signal_cd_fd.GetBinContent(signal_cd_fd.GetXaxis()->FindBin(0.775)) *mult; */
-    /* latex.DrawLatex(0.45, xMax_K0 , "K^{0}_{S}"); */
-    /* latex.DrawLatex(0.72, xMax_rho, "#rho, #omega"); */
+    TLatex latex;
+    latex.SetTextSize(0.04);
+    latex.SetTextAlign(12);
+    latex.SetTextAngle(90);
+    Double_t mult = 0.9;
+    // for KK in 45 mio CEP sample
+    Double_t add_toright = 0.05;
+    Double_t fixedLineLength = 1000.;
+    Double_t lineScale = 0.8;
+    Double_t xMax_phi   = signal_cd_fd.GetBinContent(signal_cd_fd.GetXaxis()->FindBin(1.02))*mult;
+    Double_t xMax_f2    = signal_cd_fd.GetBinContent(signal_cd_fd.GetXaxis()->FindBin(1.27))*mult;
+    Double_t xMax_f2w   = signal_cd_fd.GetBinContent(signal_cd_fd.GetXaxis()->FindBin(1.37))*mult;
+    Double_t xMax_f2rho = signal_cd_fd.GetBinContent(signal_cd_fd.GetXaxis()->FindBin(1.56))*mult;
+    latex.DrawLatex(1.02+add_toright,  lineScale*fixedLineLength, "#phi(1020)");
+    latex.DrawLatex(1.27+add_toright,  lineScale*fixedLineLength, "f2(1270)");
+    latex.DrawLatex(1.42+add_toright,  lineScale*fixedLineLength, "f2, #omega(1420)");
+    latex.DrawLatex(1.567+add_toright, lineScale*fixedLineLength, "f2, #rho(1570)");
 
-    /* TLine l; */
-    /* l.SetLineWidth(1.); */
-    /* l.SetLineStyle(7); */
-    /* l.SetLineColor(1); */
-    /* l.DrawLine(0.497,0.0, 0.497, xMax_K0*0.5); */
-    /* l.DrawLine(0.77, 0.0, 0.77, xMax_rho*0.5); */
+    TLine l;
+    l.SetLineWidth(1.);
+    l.SetLineStyle(7);
+    l.SetLineColor(1);
+    l.DrawLine(1.02, 0.0, 1.02, fixedLineLength);
+    l.DrawLine(1.27, 0.0, 1.27, fixedLineLength);
+    l.DrawLine(1.42, 0.0, 1.42, fixedLineLength);
+    l.DrawLine(1.56, 0.0, 1.56, fixedLineLength);
 
-    Double_t xleg0 = 0.576769;
+    TString fd_str   = "Feed down: ";
+    TString full_str = "Full recon: ";
+    Double_t fd_part  = double(hist_fd.Integral())/double(signal_cd_fd.Integral()) *100.;
+    Double_t rec_part = double(hist_cd.Integral())/double(signal_cd_fd.Integral()) *100.;
+    stringstream str_fd, str_cd;
+    str_fd << fixed << setprecision(2) << fd_part;
+    string fd_percent = str_fd.str();
+    str_cd << fixed << setprecision(2) << rec_part;
+    string cd_percent = str_cd.str();
+
+    Double_t xleg0 = 0.560748;
     Double_t yleg0 = 0.523172;
-    Double_t xleg1 = 0.827103;
+    Double_t xleg1 = 0.811081;
     Double_t yleg1 = 0.873326;
     TLegend* leg = new TLegend(xleg0, yleg0, xleg1, yleg1);
     leg->SetHeader( "#splitline{pp #sqrt{s} = 14TeV}{Pythia - MBR (#varepsilon = 0.08)}" );
     leg->SetFillStyle(0);
     leg->SetTextSize(0.05);
     leg->AddEntry( &signal_cd_fd, "CEP total", "ep"); 
-    leg->AddEntry( &hist_cd, "CEP full recon", "ep"); 
-    leg->AddEntry( &hist_fd, "CEP feed down", "ep"); 
+    leg->AddEntry( &hist_cd, (full_str+cd_percent+"%").Data(), "ep"); 
+    leg->AddEntry( &hist_fd, (fd_str+fd_percent+"%").Data(), "ep"); 
     leg->SetBorderSize(0);
     leg->Draw();
 
@@ -223,8 +253,8 @@ void THistMaker::Save2DMassHistInFile(TString outpath)
     gPad->SetLogz();
     fMassCompare->SetStats( false );
     fMassCompare->Draw("colz");
-    fMassCompare->GetXaxis()->SetTitle("M_{Gen}/N_{Gen}(M) [GeV/c^{2}]");
-    fMassCompare->GetYaxis()->SetTitle("M_{Detected} [GeV/c^{2}]");
+    fMassCompare->GetXaxis()->SetTitle("2K_{Generated} [GeV/c^{2}]");
+    fMassCompare->GetYaxis()->SetTitle("2K_{Detected} [GeV/c^{2}]");
 
     fMassCompare->GetXaxis()->SetTitleOffset(0.9);
     fMassCompare->GetXaxis()->SetTitleSize(0.05);
@@ -236,14 +266,14 @@ void THistMaker::Save2DMassHistInFile(TString outpath)
     feedLine1.SetLineColor(kRed);
     feedLine1.SetLineWidth(1);
     feedLine1.SetLineStyle(2);
-    TLatex feedText;
-    feedText.SetTextSize(0.025);
-    feedText.SetTextAlign(22);
-    feedText.SetTextColor(kRed);
-    feedText.DrawLatex(4.5, 2.3, "Feed down events");
-    feedLine1.DrawLine(0.7,0.2,0.7,0.6);
-    feedLine1.DrawLine(0.7,0.2,3.2*0.9,0.2);
-    feedLine1.DrawLine(0.7,0.6,3.0,2.9);
+    /* TLatex feedText; */
+    /* feedText.SetTextSize(0.025); */
+    /* feedText.SetTextAlign(22); */
+    /* feedText.SetTextColor(kRed); */
+    /* feedText.DrawLatex(2.5, 1.8, "Feed down events"); */
+    /* feedLine1.DrawLine(1.05,0.95,0.7,0.6); */
+    feedLine1.DrawLine(1.05,0.95,3.2*0.95,0.95);
+    feedLine1.DrawLine(1.05,0.95,3.0,2.9);
 
     c->SaveAs((outpath+"massComparison.pdf").Data());
 
