@@ -50,7 +50,7 @@ EventHandler::EventHandler(TString inFilename, TString outpath) :
     fEta(0), fPhi(0), fPt(0), fVx(0), fVy(0), fVz(0), fPdg(0), fEventNb(0), fDiffrCode(-1),
     // output to event file (also with event number and diffractive code)
     fHasRightParticlesInTPCITS(false), fWholeEvtDetected(false), fHitInForwardDets(false), 
-    fInvarMass(0), fHitInAD(0),
+    fInvarMass(0), fHitInAD(0), fDetGammaEt(0), fGammaInEMCal(false),
     fLoopCounter(0), fKin(false), fPyt(false)
 {
     // constructor
@@ -140,6 +140,8 @@ void EventHandler::EventInitilizer(Int_t mode, Int_t maxEvts, Bool_t saveEvtInfo
     fOutTreeEvt->Branch("fWholeEvtDetected",          &fWholeEvtDetected); 
     fOutTreeEvt->Branch("fHitInForwardDets",          &fHitInForwardDets); 
     fOutTreeEvt->Branch("fHitInAD",                   &fHitInAD); 
+    fOutTreeEvt->Branch("fGammaInEMCal",              &fGammaInEMCal); 
+    /* fOutTreeEvt->Branch("fDetGammaEt",                &fDetGammaEt); */ 
 
     Int_t iEvent = 0;
     if (fPyt) SetIEntryPythia(0);
@@ -175,12 +177,15 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, Bool_t sa
     fHasRightParticlesInTPCITS = true;
     fHitInForwardDets          = false;
     fHitInAD                   = false;
+    fGammaInEMCal              = false;
 
     fDiffrCode = 0;
     Double_t charge, phi_det;
     Int_t statCode = 0, pythiaStatCode = 0;
     Double_t mass;
     for (Int_t i = 1; i < evtsize; i++) {
+        // default value, if no gamma is in emcal, this way we can 
+        // check what the gamma-et distribution is
         if (fKin){
             fEvtTree->GetEntry(i);
             fPdg = fPart->GetPdgCode();
@@ -210,25 +215,18 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, Bool_t sa
         // now we have final particles
         charge = TDatabasePDG::Instance()->GetParticle(fPdg)->Charge();
         mass   = TDatabasePDG::Instance()->GetParticle(fPdg)->Mass();
+        // ##########################################################################
+        // ######################## Analysis ########################################
         // status code of 14 means a elastically scattered proton
         // if we continue the eventloop here we have a good event
         // if fWholeEvtDetected & fHasRightParticlesInTPCITS are true
-        /* if ( fDiffrCode != 3 ) break; */
-
         // is detected can be called multiple times as it just sets a bool
         // fIsDetected can only be called by charged particles
-        if (abs(fEta) < 1.7 && fPt =< 0.12 && charge != 0. && pythiaStatCode!=14){
+        if (abs(fEta) < 1.7 && fPt <= 0.12 && charge != 0. && pythiaStatCode!=14){
             fWholeEvtDetected = false;
             continue; 
         }
-        if ( charge != 0. && fPt > 0.12) {
-            // fIsDetected is only true if a particle is in the ITS/TPC area
-            // between abs(eta) from 0.9 to 1.7
-            if (fIsDetected(fEta)) {
-                fHasRightParticlesInTPCITS = false;
-                continue;
-            }
-        }
+        if (charge != 0.) fIsDetected(fEta);
         // emcal hit
         phi_det = fPhi * 180./ TMath::Pi();
         if ( phi_det < 0. ) phi_det += 360.;
@@ -236,7 +234,7 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, Bool_t sa
             if ( (phi_det > 80. && phi_det < 187.) || (phi_det > 260. && phi_det < 327.) ){
             // if ( evt[i].eT() > 0.3 ) { 
                 fGammaInEMCal = true;        
-                fDetGammaEt = (*fPythiaEvent)[i].eT();
+                /* fDetGammaEt = (*fPythiaEvent)[i].eT(); */
             }
         }
         if ( charge == 0. || abs(fEta) > 0.9 ) {
@@ -248,12 +246,14 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, Bool_t sa
         if (abs(fEta) < 0.9){
             // setPDGval: 1 KK mode
             //            0 pp mode
-            if (!setPDGval(mode) && fPt > 3.) fHasRightParticlesInTPCITS = false;
+            if (!setPDGval(mode) || fPt > 3.) fHasRightParticlesInTPCITS = false;
             else{
                 vTemp.SetPtEtaPhiM(fPt, fEta, fPhi, mass);
                 vtot += vTemp;
             }
         } 
+        // ########################## end ###########################################
+        // ##########################################################################
         /* if (tree->GetBranch("fEta")) tree->Fill(); */
         PrintDebug("got to end of loop");
         if (saveEvtInfo && fPyt) (*fPythiaEvent).list(os);

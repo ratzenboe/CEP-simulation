@@ -51,6 +51,7 @@ class EventHandler : public ReadDirectoryTree, public ReadPythiaTree
             Double_t            fVz;                   
             Double_t            fInvarMass;                   
             Double_t            fRealInvarMass;                   
+            Double_t            fDetGammaEt;                   
             Int_t               fPdg;
             Int_t               fEventNb;
             Int_t               fDiffrCode;
@@ -58,6 +59,7 @@ class EventHandler : public ReadDirectoryTree, public ReadPythiaTree
             Bool_t              fWholeEvtDetected;
             Bool_t              fHitInForwardDets;
             Bool_t              fHitInAD;
+            Bool_t              fGammaInEMCal;                   
             // variables for tree size control
             Int_t               fLoopCounter;
             // private member functions

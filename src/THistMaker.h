@@ -35,6 +35,8 @@ class THistMaker
         TH1F*               fHist_onlyTPC_feedDown;
         TH1F*               fHist_fwd_feedDown;
         TH1F*               fHist_ad_feedDown;
+        TH1F*               fHist_emc_CD;
+        TH1F*               fHist_emc_feedDown;
         // mass comparison for the AD case
         // measured mass VS real mass
         TH2D*               fMassCompare;
