@@ -12,6 +12,9 @@ void PrintDebug(const char *message){
 #define PrintDebug(...) 0;
 #endif
 
+#include <iostream>
+#include <fstream>
+#include <ostream>
 #include "Pythia8/Pythia.h"
 #include "TPythia8.h"
 #include <TROOT.h>
@@ -34,6 +37,8 @@ ClassImp(EventHandler);     // necessary for root
 // class reading pure pyhtia root files (with pyhtia event objects inside)
 EventHandler::EventHandler(TString inFilename, TString outpath) :
     ReadDirectoryTree(inFilename), ReadPythiaTree(inFilename),
+    // initialize the outstream object
+    fb((outpath+"eventInfo.txt").Data()), os(fb),
     // Particles from kinematics file, Pythia event from Pythia file
     fPart(0), fPythiaEvent(0), fOutpath(outpath),
     // initialisation of all private mem-vars
@@ -61,6 +66,8 @@ EventHandler::EventHandler(TString inFilename, TString outpath) :
 EventHandler::~EventHandler(void)
 {
     // destructor
+    // fist we close fb
+    fb.close();
     if (fPart) delete fPart;
     if (fEvtTree) delete fEvtTree;
 }
@@ -118,13 +125,7 @@ void EventHandler::ParticleInitializer(Int_t mode, Int_t maxEvts)
 // mode determines what particles are searched for (pipi=0, KK=1)
 void EventHandler::EventInitilizer(Int_t mode, Int_t maxEvts)
 {
-    // if we have a pythia event
-    // we can write the event in a txt file
-    std::filebuf fb;
-    fb.open((fOutpath+"eventInfo.txt").Data(), std::ios::out);
-    std::ostream os(&fb);
-    //#################################################################
-     TString op = fOutpath;
+    TString op = fOutpath;
     if (mode==0) op += "pi_";
     if (mode==1) op += "kaon_";    
     TFile* o_fEvtFile  = new TFile((op+"evt.root").Data(),  "RECREATE");
@@ -153,7 +154,7 @@ void EventHandler::EventInitilizer(Int_t mode, Int_t maxEvts)
     delete o_fEvtFile;
 }
 //_____________________________________________________________________________
-void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode)
+void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, Bool_t saveEvtInfo)
 {
    // event preparation
     fEventNb = iEvent;
@@ -235,6 +236,7 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode)
         } 
         /* if (tree->GetBranch("fEta")) tree->Fill(); */
         PrintDebug("got to end of loop");
+        if (saveEvtInfo && fPyt) (*fPythiaEvent).list(os);
     }
     Int_t Npi = 0, Nka = 0;
     fHasRightNumber(Npi, Nka);
