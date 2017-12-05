@@ -57,10 +57,12 @@ THistMaker::THistMaker(TString inputFilePath, TString title, Int_t nBins, Double
     fHist_onlyTPC_CD       = new TH1F("onlyITS_TPC_CD", "only ITS TPC",           nBins, xlo, xhi);
     fHist_fwd_CD           = new TH1F("forwardDet_CD", "forward detectors on",    nBins, xlo, xhi);
     fHist_ad_CD            = new TH1F("ADDet_CD", "AD detectors on",              nBins, xlo, xhi);
+    fHist_emc_CD           = new TH1F("EMC_det", "EMCal on",                      nBins, xlo, xhi);
     // feed down histograms
     fHist_onlyTPC_feedDown = new TH1F("onlyITS_TPC_FeedD", "only ITS TPC",        nBins, xlo, xhi);
     fHist_fwd_feedDown     = new TH1F("forwardDet_FeedD", "forward detectors on", nBins, xlo, xhi);
     fHist_ad_feedDown      = new TH1F("ADDet_FeedD", "AD detectors on",           nBins, xlo, xhi);
+    fHist_emc_feedDown     = new TH1F("emc_FeedD", "EMCal on",                    nBins, xlo, xhi);
     // 2D mass comparison histogram
     fMassCompare           = new TH2D("Mass comparison", "AD det mass comp",
                                                                  nBins, xlo, xhi, nBins, xlo, xhi);
@@ -82,6 +84,11 @@ THistMaker::THistMaker(TString inputFilePath, TString title, Int_t nBins, Double
         if (!fWholeEvtDetected) fHist_ad_feedDown->Fill(fInvarMass);
         else fHist_ad_CD->Fill(fInvarMass);
         fMassCompare->Fill(fRealInvarMass, fInvarMass);
+        // additional EMCal
+        if (fGammaInEMCal) continue;
+        if (!fWholeEvtDetected) fHist_emc_feedDown->Fill(fInvarMass);
+        else fHist_emc_CD->Fill(fInvarMass);
+
     }
 }
 //_______________________________________________________________________________
