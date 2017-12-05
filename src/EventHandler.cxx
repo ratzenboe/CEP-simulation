@@ -208,15 +208,19 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode)
         /* if ( fDiffrCode != 3 ) break; */
 
         // is detected can be called multiple times as it just sets a bool
+        // fIsDetected can only be called by charged particles
         if ( charge != 0. ) fIsDetected(fEta);
-        if ( charge == 0. || abs(fEta) > 0.9 ) fWholeEvtDetected = false;
+        if ( charge == 0. || abs(fEta) > 0.9 ) {
+            fWholeEvtDetected = false;
+            continue;
+        }
         // check if the right particles are in the evt
         // if ( !setPDGval(pdg) ) hasRightParticlesInTPCITS=false;
 
         if (abs(fEta) < 0.9){
             // setPDGval: 1 KK mode
             //            0 pp mode
-            if (!setPDGval(mode) || fIsDetected(fEta)) fHasRightParticlesInTPCITS = false;
+            if (!setPDGval(mode)) fHasRightParticlesInTPCITS = false;
             else{
                 vTemp.SetPtEtaPhiM(fPt, fEta, fPhi, mass);
                 vtot += vTemp;
