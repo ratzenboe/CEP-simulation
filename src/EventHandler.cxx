@@ -322,13 +322,15 @@ Bool_t EventHandler::fHasRightNumber(Int_t& Npi, Int_t& Nka, Int_t &Npro)
             Nka = 1;
             return true;    
         } else return false;
-    else if ( fNkaM == 0 && fNkaP == 0 ) {
+    } else if ( fNkaM == 0 && fNkaP == 0 ) {
         if ( (fNprotP == 1 && fNprotM == 0) && (fNpiP==0 && fNpiM==1) ){
             Npro = 1;
             Npi  = 1;
+            return true;
         } else if ( (fNprotP == 1 && fNprotM == 0) && (fNpiP==0 && fNpiM==1) ){
             Npro = 1;
             Npi  = 1;
+            return true;
         } else return false;
     } else return false;
 }
