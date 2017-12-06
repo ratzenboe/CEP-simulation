@@ -298,18 +298,14 @@ Bool_t EventHandler::fHasRightNumber(Int_t& Npi, Int_t& Nka, Int_t &Npro)
     if ( fNprotP==0 && fNprotM==0 ){
         if ( (fNpiP == 1 && fNpiM == 1) && fNkaP == 0 && fNkaM == 0 ){
             Npi = 2;
-            Nka = 0;
             return true;
         } else if ( (fNpiP == 2 && fNpiM == 2) && fNkaP == 0 && fNkaM == 0 ){
             Npi = 4;
-            Nka = 0;
             return true; 
         } else if ( (fNkaP == 1 && fNkaM == 1) && fNpiP == 0 && fNpiM == 0 ){
-            Npi = 0;
             Nka = 2;
             return true;
         } else if ( (fNkaP == 2 && fNkaM == 2) && fNpiP == 0 && fNpiM == 0 ){
-            Npi = 0;
             Nka = 4;
             return true;
         // search for a K-star(892) that decays into pi+/- K-/+ (strong peak in data)
@@ -382,10 +378,10 @@ Bool_t EventHandler::setPDGval(Int_t mode)
         } else if ( fPdg == -211 ){
             fNpiM++;
             return true;
-        } else if ( fPdg == 2122 ){
+        } else if ( fPdg == 2212 ){
             fNprotP++;
             return true;
-        } else if ( fPdg == -2122 ){
+        } else if ( fPdg == -2212 ){
             fNprotM++;
             return true;
         } else return false;
