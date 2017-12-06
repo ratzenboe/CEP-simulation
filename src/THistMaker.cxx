@@ -31,7 +31,9 @@ using namespace std;
 
 ClassImp(THistMaker);
 
-THistMaker::THistMaker(TString inputFilePath, TString title, Int_t nBins, Double_t xlo, Double_t xhi) : 
+THistMaker::THistMaker(TString inputFilePath, TString title, 
+                       Int_t nBins, Double_t xlo, Double_t xhi) : 
+    fNbins(nBins), fXhi(xhi), fXlo(xlo), fInFile(inputFilePath),
     // initiate member variables with 0
     fFile(0), fTree(0), fOutList(0), fOutputFile(0), 
     fHist_onlyTPC_CD(0), fHist_fwd_CD(0), fHist_ad_CD(0),
@@ -122,6 +124,18 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
     else if (mode==1) title="Forward";
     else if (mode==2) title="AD";
     else title="EMCal";    
+    Bool_t kaon = false, kapi = false, pion = false;
+    if (fInFile.Contains("kaon_")){
+        title += "_kaon";
+        kaon = true;
+    }
+    else if (fInFile.Contains("pi_")) {
+        title += "_pi";
+        pion = true;
+    } else if (fInFile.Contains("piKaon_")) {
+        title += "_piKaon";
+        kapi = true;
+    }
     // we only care for one plot at a time
     TH1F hist_cd;
     TH1F hist_fd;
@@ -141,7 +155,7 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
 
     TCanvas* c = new TCanvas( ("c"+title).Data(), "c", 1500, 1000 );
     gStyle->SetOptStat(0);
-    /* gPad->SetLogy(); */
+    gPad->SetLogy();
     /* // first we make the signal histograms = add CD + feeddown (as we only regard CEP) */
     Double_t xmin  = hist_cd.GetXaxis()->GetXmin();
     Double_t xmax  = hist_cd.GetXaxis()->GetXmax();
@@ -149,19 +163,21 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
     TH1F signal_cd_fd(("signal"+title).Data(), "", nBins, xmin, xmax);
     signal_cd_fd.Add(&hist_cd);
     signal_cd_fd.Add(&hist_fd);
-    /* // scale the hsitograms */ 
-    /* Int_t entries = signal_cd_fd.GetEntries(); */
-    /* Double_t scale_norm = 1./double(entries); */
-    /* signal_cd_fd.Scale(scale_norm); */
-    /* hist_cd.Scale(scale_norm); */
-    /* hist_fd.Scale(scale_norm); */
+    // scale the hsitograms 
+    Int_t bin_lo = signal_cd_fd.FindBin(fXlo);
+    Int_t bin_hi = signal_cd_fd.FindBin(fXhi);
+    Int_t entries = signal_cd_fd.Integral(bin_lo, bin_hi);
+    Double_t scale_norm = 1./double(entries);
+    signal_cd_fd.Scale(scale_norm);
+    hist_cd.Scale(scale_norm);
+    hist_fd.Scale(scale_norm);
     // Draw the histograms
     // later we care about the style
     signal_cd_fd.Draw("EP");
     hist_cd.Draw("EP same");
     hist_fd.Draw("EP same");
     /* signal_cd_fd.SetMaximum(1.5*signal_cd_fd.GetMaximum()); */
-    signal_cd_fd.SetMaximum(1300.);
+    signal_cd_fd.SetMaximum(1.);
     // maker style and color
     signal_cd_fd.SetMarkerStyle(kFullCircle);
     hist_cd.SetMarkerStyle(kFullSquare);
@@ -186,37 +202,53 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
     signal_cd_fd.GetYaxis()->SetTitleOffset(0.89);
     signal_cd_fd.GetXaxis()->SetTitleOffset(0.88);
 
-    signal_cd_fd.GetXaxis()->SetTitle("2K invariant mass [GeV/c^{2}]");
+    TString xTitle, yTitle;
+    if (kaon){
+        xTitle = "2K";
+        yTitle = "dN/dm_{KK}";
+    }
+    if (kapi){ 
+        xTitle = "K#pi";
+        yTitle = "dN/dm_{K#pi}";
+    }
+    signal_cd_fd.GetXaxis()->SetTitle((xTitle+" invariant mass [GeV/c^{2}]").Data());
     signal_cd_fd.GetYaxis()->SetTitle("N");
-    signal_cd_fd.GetYaxis()->SetTitle("dN/dm_{KK}");
+    signal_cd_fd.GetYaxis()->SetTitle(yTitle.Data());
     // SetTitle has to be called after setting the xAxis title!!!!
 
     TLatex latex;
     latex.SetTextSize(0.04);
     latex.SetTextAlign(12);
     latex.SetTextAngle(90);
+    latex.SetTextColor(13);
     Double_t mult = 0.9;
     // for KK in 45 mio CEP sample
     Double_t add_toright = 0.05;
-    Double_t fixedLineLength = 1000.;
-    Double_t lineScale = 0.8;
+    if (kapi) add_toright = 0.06;
+    Double_t fixedLineLength = 0.5;
+    Double_t lineScale = 0.3;
+    if (kapi) lineScale = 10e-5;
     Double_t xMax_phi   = signal_cd_fd.GetBinContent(signal_cd_fd.GetXaxis()->FindBin(1.02))*mult;
     Double_t xMax_f2    = signal_cd_fd.GetBinContent(signal_cd_fd.GetXaxis()->FindBin(1.27))*mult;
     Double_t xMax_f2w   = signal_cd_fd.GetBinContent(signal_cd_fd.GetXaxis()->FindBin(1.37))*mult;
     Double_t xMax_f2rho = signal_cd_fd.GetBinContent(signal_cd_fd.GetXaxis()->FindBin(1.56))*mult;
-    latex.DrawLatex(1.02+add_toright,  lineScale*fixedLineLength, "#phi(1020)");
-    latex.DrawLatex(1.27+add_toright,  lineScale*fixedLineLength, "f2(1270)");
-    latex.DrawLatex(1.42+add_toright,  lineScale*fixedLineLength, "f2, #omega(1420)");
-    latex.DrawLatex(1.567+add_toright, lineScale*fixedLineLength, "f2, #rho(1570)");
+    if (kaon) {
+        latex.DrawLatex(1.02+add_toright,  lineScale*fixedLineLength, "#phi(1020)");
+        latex.DrawLatex(1.27+add_toright,  lineScale*fixedLineLength, "f2(1270)");
+        latex.DrawLatex(1.42+add_toright,  lineScale*fixedLineLength, "f2, #omega(1420)");
+        latex.DrawLatex(1.567+add_toright, lineScale*fixedLineLength, "f2, #rho(1570)");
+    } else if(kapi) latex.DrawLatex(0.892+add_toright,lineScale*fixedLineLength,"K*(892)");
 
     TLine l;
     l.SetLineWidth(1.);
     l.SetLineStyle(7);
-    l.SetLineColor(1);
-    l.DrawLine(1.02, 0.0, 1.02, fixedLineLength);
-    l.DrawLine(1.27, 0.0, 1.27, fixedLineLength);
-    l.DrawLine(1.42, 0.0, 1.42, fixedLineLength);
-    l.DrawLine(1.56, 0.0, 1.56, fixedLineLength);
+    l.SetLineColor(13);
+    if (kaon) {
+        l.DrawLine(1.02, 0.0, 1.02, fixedLineLength);
+        l.DrawLine(1.27, 0.0, 1.27, fixedLineLength);
+        l.DrawLine(1.42, 0.0, 1.42, fixedLineLength);
+        l.DrawLine(1.56, 0.0, 1.56, fixedLineLength);
+    } else if (kapi) l.DrawLine(0.892, 0.0, 0.892, fixedLineLength);
 
     TString fd_str   = "Feed down: ";
     TString full_str = "Full recon: ";
@@ -230,7 +262,7 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
 
     Double_t xleg0 = 0.560748;
     Double_t yleg0 = 0.523172;
-    Double_t xleg1 = 0.811081;
+    Double_t xleg1 = 0.714953;
     Double_t yleg1 = 0.873326;
     TLegend* leg = new TLegend(xleg0, yleg0, xleg1, yleg1);
     leg->SetHeader( "#splitline{pp #sqrt{s} = 14TeV}{Pythia - MBR (#varepsilon = 0.08)}" );

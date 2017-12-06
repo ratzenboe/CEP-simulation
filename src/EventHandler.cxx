@@ -97,6 +97,7 @@ void EventHandler::ParticleInitializer(Int_t mode, Int_t maxEvts)
     TString op = fOutpath;
     if (mode==0) op += "pi_";
     if (mode==1) op += "kaon_";
+    if (mode==2) op += "piKaon_";
     TFile* o_fPartFile  = new TFile((op+"part.root").Data(),  "RECREATE");
     TTree* fOutTreePart = new TTree("particles", "part tree");
 
@@ -129,6 +130,7 @@ void EventHandler::EventInitilizer(Int_t mode, Int_t maxEvts, Bool_t saveEvtInfo
     TString op = fOutpath;
     if (mode==0) op += "pi_";
     if (mode==1) op += "kaon_";    
+    if (mode==2) op += "piKaon_";
     TFile* o_fEvtFile  = new TFile((op+"evt.root").Data(),  "RECREATE");
     TTree* fOutTreeEvt  = new TTree("event", "event tree");
 
@@ -256,16 +258,20 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, Bool_t sa
         // ##########################################################################
         /* if (tree->GetBranch("fEta")) tree->Fill(); */
         PrintDebug("got to end of loop");
-        if (saveEvtInfo && fPyt) (*fPythiaEvent).list(os);
     }
-    Int_t Npi = 0, Nka = 0;
-    fHasRightNumber(Npi, Nka);
+    Int_t Npi = 0, Nka = 0, Nprot = 0;
+    fHasRightNumber(Npi, Nka, Nprot);
     // only if has right particles is still true we can set it to false
-    if (fHasRightParticlesInTPCITS && mode==1) 
-        fHasRightParticlesInTPCITS = (Npi==0 && Nka==2) ? true : false;
     if (fHasRightParticlesInTPCITS && mode==0) 
-        fHasRightParticlesInTPCITS = (Npi==2 && Nka==0) ? true : false;
+        fHasRightParticlesInTPCITS = (Npi==2 && Nka==0 && Nprot ==0) ? true : false;    
+    if (fHasRightParticlesInTPCITS && mode==1) 
+        fHasRightParticlesInTPCITS = (Npi==0 && Nka==2 && Nprot ==0) ? true : false;
+    if (fHasRightParticlesInTPCITS && mode==2) 
+        fHasRightParticlesInTPCITS = (Npi==1 && Nka==1 && Nprot ==0) ? true : false;
+    if (fHasRightParticlesInTPCITS && mode==3) 
+        fHasRightParticlesInTPCITS = (Npi==1 && Nka==0 && Nprot ==1) ? true : false;    
     fInvarMass = vtot.M();
+    if (saveEvtInfo && fPyt && fHasRightParticlesInTPCITS) (*fPythiaEvent).list(os);
     // fill the tree
     if (tree->GetBranch("fHitInAD")) tree->Fill();
     PrintDebug("evt tree fill");
@@ -280,40 +286,54 @@ TString EventHandler::GetOutputPath(Int_t mode)
 //_____________________________________________________________________________
 void EventHandler::fIsDetected( Double_t eta )
 {
-    if ( abs( eta ) < 1.7 && abs( eta ) > 0.9 ) fHasRightParticlesInTPCITS = false;
+    if ( abs( eta ) < 1.7 && abs( eta ) > 0.9 )             fHasRightParticlesInTPCITS = false;
     else if((eta>-3.4 && eta<-1.7) || (eta>1.7 && eta<5.1)) fHitInForwardDets = true;
     else if((eta>-3.7 && eta<-1.7) || (eta>2.8 && eta<5.1)) fHitInForwardDets = true;
     else if((eta>-7.0 && eta<-4.9) || (eta>4.8 && eta<6.3)) fHitInAD = true;
     else return ;
 }
 //_____________________________________________________________________________
-Bool_t EventHandler::fHasRightNumber(Int_t& Npi, Int_t& Nka)
+Bool_t EventHandler::fHasRightNumber(Int_t& Npi, Int_t& Nka, Int_t &Npro)
 {
-    if ( (fNpiP == 1 && fNpiM == 1) && fNkaP == 0 && fNkaM == 0 ){
-        Npi = 2;
-        Nka = 0;
-        return true;
-    } else if ( (fNpiP == 2 && fNpiM == 2) && fNkaP == 0 && fNkaM == 0 ){
-        Npi = 4;
-        Nka = 0;
-        return true; 
-    } else if ( (fNkaP == 1 && fNkaM == 1) && fNpiP == 0 && fNpiM == 0 ){
-        Npi = 0;
-        Nka = 2;
-        return true;
-    } else if ( (fNkaP == 2 && fNkaM == 2) && fNpiP == 0 && fNpiM == 0 ){
-        Npi = 0;
-        Nka = 4;
-        return true;
-    // search for a K-star(892) that decays into pi+/- K-/+ (strong peak in data)
-    } else if ( (fNkaP == 1 && fNkaM == 0) && fNpiP == 0 && fNpiM == 1 ){
-        Npi = 1;
-        Nka = 1;
-        return true;    
-    } else if ( (fNkaP == 0 && fNkaM == 1) && fNpiP == 1 && fNpiM == 0 ){
-        Npi = 1;
-        Nka = 1;
-        return true;    
+    if ( fNprotP==0 && fNprotM==0 ){
+        if ( (fNpiP == 1 && fNpiM == 1) && fNkaP == 0 && fNkaM == 0 ){
+            Npi = 2;
+            Nka = 0;
+            return true;
+        } else if ( (fNpiP == 2 && fNpiM == 2) && fNkaP == 0 && fNkaM == 0 ){
+            Npi = 4;
+            Nka = 0;
+            return true; 
+        } else if ( (fNkaP == 1 && fNkaM == 1) && fNpiP == 0 && fNpiM == 0 ){
+            Npi = 0;
+            Nka = 2;
+            return true;
+        } else if ( (fNkaP == 2 && fNkaM == 2) && fNpiP == 0 && fNpiM == 0 ){
+            Npi = 0;
+            Nka = 4;
+            return true;
+        // search for a K-star(892) that decays into pi+/- K-/+ (strong peak in data)
+        } else if ( (fNkaP == 1 && fNkaM == 0) && fNpiP == 0 && fNpiM == 1 ){
+            Npi = 1;
+            Nka = 1;
+            return true;    
+        } else if ( (fNkaP == 0 && fNkaM == 1) && fNpiP == 1 && fNpiM == 0 ){
+            Npi = 1;
+            Nka = 1;
+            return true;    
+        } else if ( (fNkaP == 0 && fNkaM == 1) && fNpiP == 1 && fNpiM == 0 ){
+            Npi = 1;
+            Nka = 1;
+            return true;    
+        } else return false;
+    else if ( fNkaM == 0 && fNkaP == 0 ) {
+        if ( (fNprotP == 1 && fNprotM == 0) && (fNpiP==0 && fNpiM==1) ){
+            Npro = 1;
+            Npi  = 1;
+        } else if ( (fNprotP == 1 && fNprotM == 0) && (fNpiP==0 && fNpiM==1) ){
+            Npro = 1;
+            Npi  = 1;
+        } else return false;
     } else return false;
 }
 //_____________________________________________________________________________
@@ -322,6 +342,7 @@ Bool_t EventHandler::setPDGval(Int_t mode)
     // if mode = 0 we look only for 2pi
     // if mode = 1 we look only for 2ka
     if (mode==0){
+        // in mode 0 we only look at pions
         if ( fPdg == 211 ){
             fNpiP++;
             return true;
@@ -329,7 +350,8 @@ Bool_t EventHandler::setPDGval(Int_t mode)
             fNpiM++;
             return true;
         } else return false;
-    } else if (mode>=1){
+    } else if (mode==1){
+        // in mode 1 we only look at Kaons
         if ( fPdg == 321 ){
             fNkaP++;
             return true;
@@ -337,6 +359,36 @@ Bool_t EventHandler::setPDGval(Int_t mode)
             fNkaM++;
             return true;
         } else return false;
-    } else return false;
+    } else if (mode==2){
+        // in mode 2 we look at pions and kaons
+        if ( fPdg == 321 ){
+            fNkaP++;
+            return true;
+        } else if ( fPdg == -321 ){
+            fNkaM++;
+            return true;
+        } else if ( fPdg == 211 ){
+            fNpiP++;
+            return true;
+        } else if ( fPdg == -211 ){
+            fNpiM++;
+            return true;
+        } else return false;
+    } else if (mode==3){
+        // in mode 3 we look at pions and protons
+        if ( fPdg == 211 ){
+            fNpiP++;
+            return true;
+        } else if ( fPdg == -211 ){
+            fNpiM++;
+            return true;
+        } else if ( fPdg == 2122 ){
+            fNprotP++;
+            return true;
+        } else if ( fPdg == -2122 ){
+            fNprotM++;
+            return true;
+        } else return false;
+     } else return false;
 }
 //_____________________________________________________________________________

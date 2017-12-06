@@ -36,7 +36,7 @@ class EventHandler : public ReadDirectoryTree, public ReadPythiaTree
             Bool_t              fKin;
             Bool_t              fPyt;
             TTree*              fEvtTree;
-            Int_t               fNpiP, fNpiM, fNkaP, fNkaM;
+            Int_t               fNpiP, fNpiM, fNkaP, fNkaM, fNprotP, fNprotM;
             // output variables
             /* TFile*              o_fEvtFile; */
             /* TFile*              o_fPartFile; */
@@ -64,7 +64,7 @@ class EventHandler : public ReadDirectoryTree, public ReadPythiaTree
             Int_t               fLoopCounter;
             // private member functions
             // overloaded if other particles than 2pi are of interest
-            Bool_t              fHasRightNumber(Int_t& Npi, Int_t& Nka);
+            Bool_t              fHasRightNumber(Int_t& Npi, Int_t& Nka, Int_t& Npro);
             void                fIsDetected( Double_t eta );
             Bool_t              setPDGval(Int_t mode = 0);
             Bool_t              EventLooper(Int_t maxEvts);

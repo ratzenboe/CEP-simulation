@@ -40,15 +40,16 @@ class THistMaker
         // mass comparison for the AD case
         // measured mass VS real mass
         TH2D*               fMassCompare;
-        /* Int_t               m__interval; */
-        /* Int_t               m__signal; */
-        /* Double_t            m__lo; */
-        /* Double_t            m__hi; */
+        TString             fInFile;
+        Int_t               fNbins;
+        Double_t            fXhi;
+        Double_t            fXlo;
         Int_t               fDiffrCode;
         Bool_t              fHitInForwardDets;
         Bool_t              fHitInAD;
         Int_t               fEventNb;
         Double_t            fInvarMass;
+        Bool_t              fGammaInEMCal;
         Double_t            fRealInvarMass;
         Bool_t              fWholeEvtDetected;
         Bool_t              fHasRightParticlesInTPCITS;
