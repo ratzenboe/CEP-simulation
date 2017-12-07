@@ -31,8 +31,7 @@ using namespace std;
 
 ClassImp(THistMaker);
 
-THistMaker::THistMaker(TString inputFilePath, TString title, 
-                       Int_t nBins, Double_t xlo, Double_t xhi) : 
+THistMaker::THistMaker(TString inputFilePath, Int_t nBins, Double_t xlo, Double_t xhi) : 
     fNbins(nBins), fXhi(xhi), fXlo(xlo), fInFile(inputFilePath),
     // initiate member variables with 0
     fFile(0), fTree(0), fOutList(0), fOutputFile(0), 
@@ -43,7 +42,13 @@ THistMaker::THistMaker(TString inputFilePath, TString title,
 {
     fOutList = new TList();
     TString outFileFolder = "/home/ratzenboe/Documents/Pythia-stuff/InvariantMass_study/HistSave/";
-    fOutputFile = new TFile( (outFileFolder+title).Data(), "RECREATE" );
+    TString title = "histList";
+    if (fInFile.Contains("kaon_"))        fTitleSuffix = "_kaon";
+    if (fInFile.Contains("pi_"))          fTitleSuffix += "_pi";
+    if (fInFile.Contains("piKaon_"))      fTitleSuffix += "_piKaon";
+    if (fInFile.Contains("piProton_"))    fTitleSuffix += "_piProton";
+    if (fInFile.Contains("antipProton_")) fTitleSuffix += "_antiProton";
+    fOutputFile = new TFile( (outFileFolder+title+fTitleSuffix+".root").Data(), "RECREATE" );
 
     fFile = TFile::Open(inputFilePath);
     fTree = (TTree*)fFile->Get("event");
@@ -132,24 +137,12 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
     else if (mode==1) title="Forward";
     else if (mode==2) title="AD";
     else title="EMCal";    
-    Bool_t kaon = false, kapi = false, pion = false, piPro = false;
-    if (fInFile.Contains("kaon_")){
-        title += "_kaon";
-        kaon = true;
-    } 
-    if (fInFile.Contains("pi_")) {
-        title += "_pi";
-        pion = true;
-    } 
-    if (fInFile.Contains("piKaon_")) {
-        title += "_piKaon";
-        kapi = true;
-    } 
-    if (fInFile.Contains("piProton_")) {
-        title += "_piProton";
-        piPro = true;
-    } 
- 
+    Bool_t kaon = false, kapi = false, pion = false, piPro = false, pp = false;
+    if (fInFile.Contains("kaon_"))        kaon = true;
+    if (fInFile.Contains("pi_"))          pion = true;
+    if (fInFile.Contains("piKaon_"))      kapi = true;
+    if (fInFile.Contains("piProton_"))    piPro = true;
+    if (fInFile.Contains("antipProton_")) pp = true;
     // we only care for one plot at a time
     TH1F hist_cd;
     TH1F hist_fd;
@@ -292,7 +285,7 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
     leg->SetBorderSize(0);
     leg->Draw();
 
-    c->SaveAs((outpath+title+".pdf").Data());
+    c->SaveAs((outpath+title+fTitleSuffix+".pdf").Data());
 
     delete c;
 }
@@ -325,7 +318,7 @@ void THistMaker::Save2DMassHistInFile(TString outpath)
     feedLine1.DrawLine(1.05,0.95,3.2*0.95,0.95);
     feedLine1.DrawLine(1.05,0.95,3.0,2.9);
 
-    c->SaveAs((outpath+"massComparison.pdf").Data());
+    c->SaveAs((outpath+"massComparison"+fTitleSuffix+".pdf").Data());
 
     delete c;
 }
