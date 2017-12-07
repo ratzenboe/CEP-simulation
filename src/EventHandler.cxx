@@ -128,11 +128,14 @@ void EventHandler::ParticleInitializer(Int_t mode, Int_t maxEvts)
 void EventHandler::EventInitilizer(Int_t mode, Int_t maxEvts, Bool_t saveEvtInfo)
 {
     TString op = fOutpath;
-    if (mode==0) op += "pi_";
-    if (mode==1) op += "kaon_";    
-    if (mode==2) op += "piKaon_";
-    if (mode==3) op += "piProton_";
-    if (mode==4) op += "antipProton_";
+    if (mode==pipi)     op += "pi_";
+    if (mode==kaka)     op += "kaon_";    
+    if (mode==pika)     op += "piKaon_";
+    if (mode==piPr)     op += "piProton_";
+    if (mode==pp)       op += "antipProton_";
+    if (mode==fourpi)   op += "fourpi_";
+    if (mode==fourka)   op += "fourka_";
+    if (mode==pikafour) op += "pikafour_";
     TFile* o_fEvtFile  = new TFile((op+"evt.root").Data(),  "RECREATE");
     TTree* fOutTreeEvt  = new TTree("event", "event tree");
 
@@ -191,7 +194,7 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, Bool_t sa
 
     fDiffrCode = 0;
     Double_t charge, phi_det;
-    Int_t statCode = 0, pythiaStatCode = 0, idMom = 0;
+    Int_t statCode = 0, pythiaStatCode = 0, idMom = 0, mother1 = 0;
     Double_t mass;
     // to assess if the particles come from the CEP or from a daughter of it
     // is neccessary for fFromCEP
@@ -314,9 +317,9 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, Bool_t sa
     // checkout if the particles come from the CEP or from another particle
     Int_t vectorSum(0), CEPMomCounter(0);
 
-    for (Unsigned i(0); i < pdgMomVec.size(); i++){
+    for (unsigned i(0); i < pdgMomVec.size(); i++){
         vectorSum += pdgMomVec[i];
-        if (pdgMomVec==1) CEPMomCounter++;
+        if (pdgMomVec[i]==1) CEPMomCounter++;
     }
     // if all come from CEP: 0
     if (pdgMomVec.size() > 1 && fWholeEvtDetected){

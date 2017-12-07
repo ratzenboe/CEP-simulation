@@ -60,6 +60,7 @@ class EventHandler : public ReadDirectoryTree, public ReadPythiaTree
             Bool_t              fHitInForwardDets;
             Bool_t              fHitInAD;
             Bool_t              fGammaInEMCal;                   
+            Int_t               fFromCEP;                   
             // variables for tree size control
             Int_t               fLoopCounter;
             // private member functions
