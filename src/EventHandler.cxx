@@ -269,22 +269,22 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, Bool_t sa
     // only if has right particles is still true we can set it to false
     if (fHasRightParticlesInTPCITS){
         switch(mode){
-            case pipi: fHasRightParticlesInTPCITS = (Npi==2 && Nka==0 && Nprot ==0) ? true : false;
+            case pipi: fHasRightParticlesInTPCITS = (Npi==2 && Nka==0 && Nprot ==0) ? true : false;                       break;
             case kaka: fHasRightParticlesInTPCITS = (Npi==0 && Nka==2 && Nprot ==0) ? true : false;
+                       break;
             case pika: fHasRightParticlesInTPCITS = (Npi==1 && Nka==1 && Nprot ==0) ? true : false;
+                       break;
             case piPr: fHasRightParticlesInTPCITS = (Npi==1 && Nka==0 && Nprot ==1) ? true : false;
+                       break;
             case pp:   fHasRightParticlesInTPCITS = (Npi==0 && Nka==0 && Nprot ==2) ? true : false;
+                       break;
         }
     }
-    if (fHasRightParticlesInTPCITS) printf("has right particles in TPC\n");
     fInvarMass = vtot.M();
     if (saveEvtInfo && fPyt && fHasRightParticlesInTPCITS) (*fPythiaEvent).list(os);
     // fill the tree
 
-    if (fHasRightParticlesInTPCITS && tree->GetBranch("fHitInAD")){
-        printf("filling tree\n");
-        tree->Fill();
-    }
+    if (fHasRightParticlesInTPCITS && tree->GetBranch("fHitInAD")) tree->Fill();
     PrintDebug("evt tree fill");
     return ;
 }
@@ -328,14 +328,15 @@ void EventHandler::fHasRightNumber(Int_t& Npi, Int_t& Nka, Int_t &Npro)
 Bool_t EventHandler::setPDGval(void)
 {
     switch(fPdg){
-        case      pion: fNpiP++;   return true;
-        case   (-pion): fNpiM++;   return true;
-        case      kaon: fNkaP++;   return true;
-        case   (-kaon): fNkaM++;   return true;
-        case    proton: fNprotP++; return true;
-        case (-proton): fNprotM++; return true;
+        case      pion: fNpiP++;   break;
+        case   (-pion): fNpiM++;   break;
+        case      kaon: fNkaP++;   break;
+        case   (-kaon): fNkaM++;   break;
+        case    proton: fNprotP++; break;
+        case (-proton): fNprotM++; break;
 
-        default:                 return false; 
+        default: return false; 
     }
+    return true;
 }
 //_____________________________________________________________________________
