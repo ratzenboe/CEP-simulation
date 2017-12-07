@@ -269,20 +269,30 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, Bool_t sa
     // only if has right particles is still true we can set it to false
     if (fHasRightParticlesInTPCITS){
         switch(mode){
-            case pipi: fHasRightParticlesInTPCITS = (Npi==2 && Nka==0 && Nprot ==0) ? true : false;
+            case pipi: fHasRightParticlesInTPCITS = (Npi==2 && Nka==0 && Nprot==0) ? true : false;
                        break;
-            case kaka: fHasRightParticlesInTPCITS = (Npi==0 && Nka==2 && Nprot ==0) ? true : false;
+            case kaka: fHasRightParticlesInTPCITS = (Npi==0 && Nka==2 && Nprot==0) ? true : false;
                        break;
-            case pika: fHasRightParticlesInTPCITS = (Npi==1 && Nka==1 && Nprot ==0) ? true : false;
+            case pika: fHasRightParticlesInTPCITS = (Npi==1 && Nka==1 && Nprot==0) ? true : false;
                        break;
-            case piPr: fHasRightParticlesInTPCITS = (Npi==1 && Nka==0 && Nprot ==1) ? true : false;
+            case piPr: fHasRightParticlesInTPCITS = (Npi==1 && Nka==0 && Nprot==1) ? true : false;
                        break;
-            case pp:   fHasRightParticlesInTPCITS = (Npi==0 && Nka==0 && Nprot ==2) ? true : false;
+            case pp:   fHasRightParticlesInTPCITS = (Npi==0 && Nka==0 && Nprot==2) ? true : false;
                        break;
+            case fourpi:   
+                       fHasRightParticlesInTPCITS = (Npi==4 && Nka==0 && Nprot==0) ? true : false;
+                       break;
+            case fourka:   
+                       fHasRightParticlesInTPCITS = (Npi==4 && Nka==0 && Nprot==0) ? true : false;
+                       break;        
+            case pikafour:   
+                       fHasRightParticlesInTPCITS = (Npi==2 && Nka==2 && Nprot==0) ? true : false;
+                       break; 
         }
     }
     fInvarMass = vtot.M();
-    if (saveEvtInfo && fPyt && fHasRightParticlesInTPCITS){
+    if (saveEvtInfo && fPyt && fHasRightParticlesInTPCITS && fWholeEvtDetected){
+        os << "fWholeEvtDetected: " << fWholeEvtDetected << endl;
         os << "fDiffrCode:        " << fDiffrCode        << endl;
         os << "fHitInAD:          " << fHitInAD          << endl;
         os << "fHitInForwardDets: " << fHitInForwardDets << endl;
@@ -320,6 +330,10 @@ void EventHandler::fHasRightNumber(Int_t& Npi, Int_t& Nka, Int_t &Npro)
         else if ((fNkaP == 1 && fNkaM == 0) && fNpiP == 0 && fNpiM == 1){ Npi = 1; Nka = 1; return ;}
         else if ((fNkaP == 0 && fNkaM == 1) && fNpiP == 1 && fNpiM == 0){ Npi = 1; Nka = 1; return ;}
         else if ((fNkaP == 0 && fNkaM == 1) && fNpiP == 1 && fNpiM == 0){ Npi = 1; Nka = 1; return ;}
+        else if ((fNkaP == 0 && fNkaM == 0) && fNpiP == 2 && fNpiM == 2){ Npi = 4; return ;}
+        else if ((fNkaP == 2 && fNkaM == 2) && fNpiP == 0 && fNpiM == 0){ Nka = 4; return ;}
+        else if ((fNkaP == 1 && fNkaM == 1) && fNpiP == 1 && fNpiM == 1){ 
+            Nka = 2; Npi = 2; return ;}
         else return ;
     } 
     else if ( fNkaM == 0 && fNkaP == 0 ) {

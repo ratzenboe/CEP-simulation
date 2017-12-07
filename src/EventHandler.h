@@ -70,7 +70,8 @@ class EventHandler : public ReadDirectoryTree, public ReadPythiaTree
             Bool_t              EventLooper(Int_t maxEvts);
             void                AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, 
                                                                         Bool_t saveEvtInfo=false);
-            enum                fModes         {pipi=0, kaka=1, pika=2, piPr=3,  pp=4};
+            enum                fModes         {pipi=0, kaka=1, pika=2, piPr=3,  pp=4,
+                                                fourpi=5, fourka=6,        pikafour=7};
             enum                fParticleCodes {pion = 211, kaon = 321, proton = 2212};
 };
 
