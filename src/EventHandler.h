@@ -64,12 +64,14 @@ class EventHandler : public ReadDirectoryTree, public ReadPythiaTree
             Int_t               fLoopCounter;
             // private member functions
             // overloaded if other particles than 2pi are of interest
-            Bool_t              fHasRightNumber(Int_t& Npi, Int_t& Nka, Int_t& Npro);
+            void                fHasRightNumber(Int_t& Npi, Int_t& Nka, Int_t& Npro);
             void                fIsDetected( Double_t eta );
-            Bool_t              setPDGval(Int_t mode = 0);
+            Bool_t              setPDGval(void);
             Bool_t              EventLooper(Int_t maxEvts);
             void                AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, 
                                                                         Bool_t saveEvtInfo=false);
+            enum                fModes         {2pi=0, 2ka=1, pika=2, piPro=3, 2pro=4};
+            enum                fParticleCodes {pion = 211, kaon = 321, proton = 2212};
 };
 
 #endif

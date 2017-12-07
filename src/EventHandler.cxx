@@ -267,20 +267,18 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, Bool_t sa
     Int_t Npi = 0, Nka = 0, Nprot = 0;
     fHasRightNumber(Npi, Nka, Nprot);
     // only if has right particles is still true we can set it to false
-    if (fHasRightParticlesInTPCITS && mode==0) 
-        fHasRightParticlesInTPCITS = (Npi==2 && Nka==0 && Nprot ==0) ? true : false;    
-    if (fHasRightParticlesInTPCITS && mode==1) 
-        fHasRightParticlesInTPCITS = (Npi==0 && Nka==2 && Nprot ==0) ? true : false;
-    if (fHasRightParticlesInTPCITS && mode==2) 
-        fHasRightParticlesInTPCITS = (Npi==1 && Nka==1 && Nprot ==0) ? true : false;
-    if (fHasRightParticlesInTPCITS && mode==3) 
-        fHasRightParticlesInTPCITS = (Npi==1 && Nka==0 && Nprot ==1) ? true : false;    
-    if (fHasRightParticlesInTPCITS && mode==4) 
-        fHasRightParticlesInTPCITS = (Npi==0 && Nka==0 && Nprot ==2) ? true : false;    
+    if (fHasRightParticlesInTPCITS){
+    switch(mode){
+        case 2pi:   fHasRightParticlesInTPCITS = (Npi==2 && Nka==0 && Nprot ==0) ? true : false;
+        case 2ka:   fHasRightParticlesInTPCITS = (Npi==0 && Nka==2 && Nprot ==0) ? true : false;
+        case pika:  fHasRightParticlesInTPCITS = (Npi==1 && Nka==1 && Nprot ==0) ? true : false;
+        case piPro: fHasRightParticlesInTPCITS = (Npi==1 && Nka==0 && Nprot ==1) ? true : false;
+        case 2pro:  fHasRightParticlesInTPCITS = (Npi==0 && Nka==0 && Nprot ==2) ? true : false;
+    }
     fInvarMass = vtot.M();
     if (saveEvtInfo && fPyt && fHasRightParticlesInTPCITS) (*fPythiaEvent).list(os);
     // fill the tree
-    if (tree->GetBranch("fHitInAD")) tree->Fill();
+    if (fHasRightParticlesInTPCITS && tree->GetBranch("fHitInAD")) tree->Fill();
     PrintDebug("evt tree fill");
     return ;
 }
@@ -300,113 +298,35 @@ void EventHandler::fIsDetected( Double_t eta )
     else return ;
 }
 //_____________________________________________________________________________
-Bool_t EventHandler::fHasRightNumber(Int_t& Npi, Int_t& Nka, Int_t &Npro)
+void EventHandler::fHasRightNumber(Int_t& Npi, Int_t& Nka, Int_t &Npro)
 {
     if ( fNprotP==0 && fNprotM==0 ){
-        if ( (fNpiP == 1 && fNpiM == 1) && fNkaP == 0 && fNkaM == 0 ){
-            Npi = 2;
-            return true;
-        } else if ( (fNpiP == 2 && fNpiM == 2) && fNkaP == 0 && fNkaM == 0 ){
-            Npi = 4;
-            return true; 
-        } else if ( (fNkaP == 1 && fNkaM == 1) && fNpiP == 0 && fNpiM == 0 ){
-            Nka = 2;
-            return true;
-        } else if ( (fNkaP == 2 && fNkaM == 2) && fNpiP == 0 && fNpiM == 0 ){
-            Nka = 4;
-            return true;
-        // search for a K-star(892) that decays into pi+/- K-/+ (strong peak in data)
-        } else if ( (fNkaP == 1 && fNkaM == 0) && fNpiP == 0 && fNpiM == 1 ){
-            Npi = 1;
-            Nka = 1;
-            return true;    
-        } else if ( (fNkaP == 0 && fNkaM == 1) && fNpiP == 1 && fNpiM == 0 ){
-            Npi = 1;
-            Nka = 1;
-            return true;    
-        } else if ( (fNkaP == 0 && fNkaM == 1) && fNpiP == 1 && fNpiM == 0 ){
-            Npi = 1;
-            Nka = 1;
-            return true;    
-        } else return false;
-    } else if ( fNkaM == 0 && fNkaP == 0 ) {
-        if ( (fNprotP == 1 && fNprotM == 0) && (fNpiP==0 && fNpiM==1) ){
-            Npro = 1;
-            Npi  = 1;
-            return true;
-        } else if ( (fNprotP == 1 && fNprotM == 0) && (fNpiP==0 && fNpiM==1) ){
-            Npro = 1;
-            Npi  = 1;
-            return true;
-        } else if ( (fNprotP == 1 && fNprotM == 1) && (fNpiP==0 && fNpiM==0) ){
-            Npro = 2;
-            return true;
-        } else return false;
-    } else return false;
+        if ( (fNpiP == 1 && fNpiM == 1) && fNkaP == 0 && fNkaM == 0 ) Npi = 2;
+        if ( (fNpiP == 2 && fNpiM == 2) && fNkaP == 0 && fNkaM == 0 ) Npi = 4;
+        if ( (fNkaP == 1 && fNkaM == 1) && fNpiP == 0 && fNpiM == 0 ) Nka = 2;
+        if ( (fNkaP == 2 && fNkaM == 2) && fNpiP == 0 && fNpiM == 0 ) Nka = 4;
+        if ( (fNkaP == 1 && fNkaM == 0) && fNpiP == 0 && fNpiM == 1 ) Npi = 1; Nka = 1;
+        if ( (fNkaP == 0 && fNkaM == 1) && fNpiP == 1 && fNpiM == 0 ) Npi = 1; Nka = 1;
+        if ( (fNkaP == 0 && fNkaM == 1) && fNpiP == 1 && fNpiM == 0 ) Npi = 1; Nka = 1;
+    } 
+    if ( fNkaM == 0 && fNkaP == 0 ) {
+        if ( (fNprotP == 1 && fNprotM == 0) && (fNpiP==0 && fNpiM==1) ) Npro = 1; Npi  = 1;
+        if ( (fNprotP == 1 && fNprotM == 0) && (fNpiP==0 && fNpiM==1) ) Npro = 1; Npi  = 1;
+        if ( (fNprotP == 1 && fNprotM == 1) && (fNpiP==0 && fNpiM==0) ) Npro = 2;
+    }
 }
 //_____________________________________________________________________________
-Bool_t EventHandler::setPDGval(Int_t mode)
+Bool_t EventHandler::setPDGval(void)
 {
-    // if mode = 0 we look only for 2pi
-    // if mode = 1 we look only for 2ka
-    if (mode==0){
-        // in mode 0 we only look at pions
-        if ( fPdg == 211 ){
-            fNpiP++;
-            return true;
-        } else if ( fPdg == -211 ){
-            fNpiM++;
-            return true;
-        } else return false;
-    } else if (mode==1){
-        // in mode 1 we only look at Kaons
-        if ( fPdg == 321 ){
-            fNkaP++;
-            return true;
-        } else if ( fPdg == -321 ){
-            fNkaM++;
-            return true;
-        } else return false;
-    } else if (mode==2){
-        // in mode 2 we look at pions and kaons
-        if ( fPdg == 321 ){
-            fNkaP++;
-            return true;
-        } else if ( fPdg == -321 ){
-            fNkaM++;
-            return true;
-        } else if ( fPdg == 211 ){
-            fNpiP++;
-            return true;
-        } else if ( fPdg == -211 ){
-            fNpiM++;
-            return true;
-        } else return false;
-    } else if (mode==3){
-        // in mode 3 we look at pions and protons
-        if ( fPdg == 211 ){
-            fNpiP++;
-            return true;
-        } else if ( fPdg == -211 ){
-            fNpiM++;
-            return true;
-        } else if ( fPdg == 2212 ){
-            fNprotP++;
-            return true;
-        } else if ( fPdg == -2212 ){
-            fNprotM++;
-            return true;
-        } else return false;
-    } else if (mode==4){
-        // in mode 4 we look at protons and antiprotons
-        if ( fPdg == 2212 ){
-            fNprotP++;
-            return true;
-        } else if ( fPdg == -2212 ){
-            fNprotM++;
-            return true;
-        } else return false;
+    switch(fPdg){
+        case    pion: fNpiP++;   return true;
+        case   -pion: fNpiM++;   return true;
+        case    kaon: fNkaP++;   return true;
+        case   -kaon: fNkaM++;   return true;
+        case  proton: fNprotP++; return true;
+        case -proton: fNprotM++; return true;
 
-    } else return false;
+        default:                 return false; 
+    }
 }
 //_____________________________________________________________________________
