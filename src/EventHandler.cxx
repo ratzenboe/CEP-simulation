@@ -253,7 +253,7 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, Bool_t sa
         if (abs(fEta) < 0.9){
             // setPDGval: 1 KK mode
             //            0 pp mode
-            if (!setPDGval(mode) || fPt > 3.) fHasRightParticlesInTPCITS = false;
+            if (!setPDGval() || fPt > 3.) fHasRightParticlesInTPCITS = false;
             else{
                 vTemp.SetPtEtaPhiM(fPt, fEta, fPhi, mass);
                 vtot += vTemp;
@@ -269,11 +269,11 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, Bool_t sa
     // only if has right particles is still true we can set it to false
     if (fHasRightParticlesInTPCITS){
     switch(mode){
-        case 2pi:   fHasRightParticlesInTPCITS = (Npi==2 && Nka==0 && Nprot ==0) ? true : false;
-        case 2ka:   fHasRightParticlesInTPCITS = (Npi==0 && Nka==2 && Nprot ==0) ? true : false;
+        case pipi:  fHasRightParticlesInTPCITS = (Npi==2 && Nka==0 && Nprot ==0) ? true : false;
+        case kaka:  fHasRightParticlesInTPCITS = (Npi==0 && Nka==2 && Nprot ==0) ? true : false;
         case pika:  fHasRightParticlesInTPCITS = (Npi==1 && Nka==1 && Nprot ==0) ? true : false;
         case piPro: fHasRightParticlesInTPCITS = (Npi==1 && Nka==0 && Nprot ==1) ? true : false;
-        case 2pro:  fHasRightParticlesInTPCITS = (Npi==0 && Nka==0 && Nprot ==2) ? true : false;
+        case pp:    fHasRightParticlesInTPCITS = (Npi==0 && Nka==0 && Nprot ==2) ? true : false;
     }
     fInvarMass = vtot.M();
     if (saveEvtInfo && fPyt && fHasRightParticlesInTPCITS) (*fPythiaEvent).list(os);
@@ -289,12 +289,12 @@ TString EventHandler::GetOutputPath(Int_t mode)
     else return fOutpath+"part.root";
 }
 //_____________________________________________________________________________
-void EventHandler::fIsDetected( Double_t eta )
+void EventHandler::fIsDetected(void)
 {
-    if ( abs( eta ) < 1.7 && abs( eta ) > 0.9 )             fHasRightParticlesInTPCITS = false;
-    else if((eta>-3.4 && eta<-1.7) || (eta>1.7 && eta<5.1)) fHitInForwardDets = true;
-    else if((eta>-3.7 && eta<-1.7) || (eta>2.8 && eta<5.1)) fHitInForwardDets = true;
-    else if((eta>-7.0 && eta<-4.9) || (eta>4.8 && eta<6.3)) fHitInAD = true;
+    if ( abs( fEta ) < 1.7 && abs( fEta ) > 0.9 )               fHasRightParticlesInTPCITS = false;
+    else if((fEta>-3.4 && fEta<-1.7) || (fEta>1.7 && fEta<5.1)) fHitInForwardDets = true;
+    else if((fEta>-3.7 && fEta<-1.7) || (fEta>2.8 && fEta<5.1)) fHitInForwardDets = true;
+    else if((fEta>-7.0 && fEta<-4.9) || (fEta>4.8 && fEta<6.3)) fHitInAD = true;
     else return ;
 }
 //_____________________________________________________________________________
