@@ -282,7 +282,12 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, Bool_t sa
         }
     }
     fInvarMass = vtot.M();
-    if (saveEvtInfo && fPyt && fHasRightParticlesInTPCITS) (*fPythiaEvent).list(os);
+    if (saveEvtInfo && fPyt && fHasRightParticlesInTPCITS){
+        os << "fDiffrCode:        " << fDiffrCode        << endl;
+        os << "fHitInAD:          " << fHitInAD          << endl;
+        os << "fHitInForwardDets: " << fHitInForwardDets << endl;
+        (*fPythiaEvent).list(os);
+    }
     // fill the tree
 
     if (fHasRightParticlesInTPCITS && tree->GetBranch("fHitInAD")) tree->Fill();
