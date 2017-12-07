@@ -327,7 +327,7 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, Bool_t sa
                 std::adjacent_find( pdgMomVec.begin(), pdgMomVec.end(), 
                     std::not_equal_to<Int_t>() ) == pdgMomVec.end() ) fFromCEP = pdgMomVec[0];
         else fFromCEP = -1;
-    }
+    } else fFromCEP = -1;
     // fill the tree
     if (fHasRightParticlesInTPCITS && tree->GetBranch("fHitInAD")) tree->Fill();
     PrintDebug("evt tree fill");
