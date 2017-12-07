@@ -45,7 +45,7 @@ EventHandler::EventHandler(TString inFilename, TString outpath) :
     // initialisation of all private mem-vars
     /* fEvtTree(0), */ 
     /* o_fEvtFile(0), o_fPartFile(0), fOutTreeEvt(0), fOutTreePart(0), */
-    fNpiP(0), fNpiM(0), fNkaP(0), fNkaM(0),
+    fNpiP(0), fNpiM(0), fNkaP(0), fNkaM(0), fNprotM(0), fNprotP(0),
     // output to particle file
     fEta(0), fPhi(0), fPt(0), fVx(0), fVy(0), fVz(0), fPdg(0), fEventNb(0), fDiffrCode(-1),
     // output to event file (also with event number and diffractive code)
@@ -131,6 +131,7 @@ void EventHandler::EventInitilizer(Int_t mode, Int_t maxEvts, Bool_t saveEvtInfo
     if (mode==0) op += "pi_";
     if (mode==1) op += "kaon_";    
     if (mode==2) op += "piKaon_";
+    if (mode==3) op += "piProton_";
     TFile* o_fEvtFile  = new TFile((op+"evt.root").Data(),  "RECREATE");
     TTree* fOutTreeEvt  = new TTree("event", "event tree");
 
@@ -167,10 +168,12 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, Bool_t sa
     if (fKin)      evtsize = fEvtTree->GetEntries();
     else if (fPyt) evtsize = fPythiaEvent->size();
     else evtsize = 0;
-    fNkaP = 0;
-    fNkaM = 0;
-    fNpiP = 0;
-    fNpiM = 0;
+    fNkaP   = 0;
+    fNkaM   = 0;
+    fNpiP   = 0;
+    fNpiM   = 0;
+    fNprotP = 0;
+    fNprotM = 0;
 
     TLorentzVector vTemp;
     TLorentzVector vtot;

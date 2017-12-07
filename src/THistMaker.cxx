@@ -36,7 +36,7 @@ THistMaker::THistMaker(TString inputFilePath, TString title,
     fNbins(nBins), fXhi(xhi), fXlo(xlo), fInFile(inputFilePath),
     // initiate member variables with 0
     fFile(0), fTree(0), fOutList(0), fOutputFile(0), 
-    fHist_onlyTPC_CD(0), fHist_fwd_CD(0), fHist_ad_CD(0),
+    fTPCITSsignalEnries(0), fHist_onlyTPC_CD(0), fHist_fwd_CD(0), fHist_ad_CD(0),
     fHist_onlyTPC_feedDown(0), fHist_fwd_feedDown(0), fHist_ad_feedDown(0), fMassCompare(0),
     fDiffrCode(-1), fHitInForwardDets(false), fHitInAD(false), fEventNb(0), fInvarMass(0),
     fGammaInEMCal(false), fWholeEvtDetected(false), fHasRightParticlesInTPCITS(false)
@@ -71,8 +71,6 @@ THistMaker::THistMaker(TString inputFilePath, TString title,
     // 2D mass comparison histogram
     fMassCompare           = new TH2D("Mass comparison", "AD det mass comp",
                                                                  nBins, xlo, xhi, nBins, xlo, xhi);
-
-
     for (unsigned i(0); i<fTree->GetEntries(); i++){
         fTree->GetEntry(i);
         if (fDiffrCode != 3) continue;
@@ -95,6 +93,13 @@ THistMaker::THistMaker(TString inputFilePath, TString title,
         else fHist_emc_CD->Fill(fInvarMass);
 
     }
+    Int_t bin_lo_CD      = fHist_onlyTPC_CD->FindBin(fXlo);
+    Int_t bin_hi_CD      = fHist_onlyTPC_CD->FindBin(fXhi);
+    Int_t bin_lo_fd      = fHist_onlyTPC_feedDown->FindBin(fXlo);
+    Int_t bin_hi_fd      = fHist_onlyTPC_feedDown->FindBin(fXhi);    
+    fTPCITSsignalEnries += fHist_onlyTPC_CD->Integral(bin_lo_CD, bin_hi_CD);
+    fTPCITSsignalEnries += fHist_onlyTPC_feedDown->Integral(bin_lo_fd, bin_hi_fd);
+    printf("fTPCITSsignalEnries: %i", fTPCITSsignalEnries);
 }
 //_______________________________________________________________________________
 THistMaker::~THistMaker(void)
@@ -108,6 +113,10 @@ THistMaker::~THistMaker(void)
 
     fOutputFile->Close();
     delete fOutputFile;
+    /* fFile->Close(); */
+    /* delete fFile; */
+
+    delete fOutList;
 }
 //_______________________________________________________________________________
 void THistMaker::SaveList(void)
@@ -124,18 +133,24 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
     else if (mode==1) title="Forward";
     else if (mode==2) title="AD";
     else title="EMCal";    
-    Bool_t kaon = false, kapi = false, pion = false;
+    Bool_t kaon = false, kapi = false, pion = false, piPro = false;
     if (fInFile.Contains("kaon_")){
         title += "_kaon";
         kaon = true;
-    }
-    else if (fInFile.Contains("pi_")) {
+    } 
+    if (fInFile.Contains("pi_")) {
         title += "_pi";
         pion = true;
-    } else if (fInFile.Contains("piKaon_")) {
+    } 
+    if (fInFile.Contains("piKaon_")) {
         title += "_piKaon";
         kapi = true;
-    }
+    } 
+    if (fInFile.Contains("piProton_")) {
+        title += "_piProton";
+        piPro = true;
+    } 
+ 
     // we only care for one plot at a time
     TH1F hist_cd;
     TH1F hist_fd;
@@ -156,7 +171,7 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
     TCanvas* c = new TCanvas( ("c"+title).Data(), "c", 1500, 1000 );
     gStyle->SetOptStat(0);
     gPad->SetLogy();
-    /* // first we make the signal histograms = add CD + feeddown (as we only regard CEP) */
+    // first we make the signal histograms = add CD + feeddown (as we only regard CEP)
     Double_t xmin  = hist_cd.GetXaxis()->GetXmin();
     Double_t xmax  = hist_cd.GetXaxis()->GetXmax();
     Int_t    nBins = hist_cd.GetNbinsX(); 
@@ -164,13 +179,10 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
     signal_cd_fd.Add(&hist_cd);
     signal_cd_fd.Add(&hist_fd);
     // scale the hsitograms 
-    Int_t bin_lo = signal_cd_fd.FindBin(fXlo);
-    Int_t bin_hi = signal_cd_fd.FindBin(fXhi);
-    Int_t entries = signal_cd_fd.Integral(bin_lo, bin_hi);
-    Double_t scale_norm = 1./double(entries);
-    signal_cd_fd.Scale(scale_norm);
-    hist_cd.Scale(scale_norm);
-    hist_fd.Scale(scale_norm);
+    /* Double_t scale_norm = 1./double(fTPCITSsignalEnries); */
+    /* signal_cd_fd.Scale(scale_norm); */
+    /* hist_cd.Scale(scale_norm); */
+    /* hist_fd.Scale(scale_norm); */
     // Draw the histograms
     // later we care about the style
     signal_cd_fd.Draw("EP");
@@ -206,10 +218,12 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
     if (kaon){
         xTitle = "2K";
         yTitle = "dN/dm_{KK}";
-    }
-    if (kapi){ 
+    } else if (kapi){ 
         xTitle = "K#pi";
         yTitle = "dN/dm_{K#pi}";
+    } else if (piPro) {
+        xTitle = "p#pi";
+        yTitle = "dN/dm_{p#pi}";
     }
     signal_cd_fd.GetXaxis()->SetTitle((xTitle+" invariant mass [GeV/c^{2}]").Data());
     signal_cd_fd.GetYaxis()->SetTitle("N");
@@ -224,10 +238,10 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
     Double_t mult = 0.9;
     // for KK in 45 mio CEP sample
     Double_t add_toright = 0.05;
-    if (kapi) add_toright = 0.06;
+    if (kapi || piPro) add_toright = 0.06;
     Double_t fixedLineLength = 0.5;
     Double_t lineScale = 0.3;
-    if (kapi) lineScale = 10e-5;
+    if (kapi || piPro) lineScale = 10e-5;
     Double_t xMax_phi   = signal_cd_fd.GetBinContent(signal_cd_fd.GetXaxis()->FindBin(1.02))*mult;
     Double_t xMax_f2    = signal_cd_fd.GetBinContent(signal_cd_fd.GetXaxis()->FindBin(1.27))*mult;
     Double_t xMax_f2w   = signal_cd_fd.GetBinContent(signal_cd_fd.GetXaxis()->FindBin(1.37))*mult;
@@ -237,7 +251,9 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
         latex.DrawLatex(1.27+add_toright,  lineScale*fixedLineLength, "f2(1270)");
         latex.DrawLatex(1.42+add_toright,  lineScale*fixedLineLength, "f2, #omega(1420)");
         latex.DrawLatex(1.567+add_toright, lineScale*fixedLineLength, "f2, #rho(1570)");
-    } else if(kapi) latex.DrawLatex(0.892+add_toright,lineScale*fixedLineLength,"K*(892)");
+    } 
+    if(kapi)  latex.DrawLatex(0.892+add_toright,lineScale*fixedLineLength,"K*(892)");
+    if(piPro) latex.DrawLatex(1.115+add_toright,lineScale*fixedLineLength,"#Lambda^{0}(1115)");
 
     TLine l;
     l.SetLineWidth(1.);
@@ -248,7 +264,9 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
         l.DrawLine(1.27, 0.0, 1.27, fixedLineLength);
         l.DrawLine(1.42, 0.0, 1.42, fixedLineLength);
         l.DrawLine(1.56, 0.0, 1.56, fixedLineLength);
-    } else if (kapi) l.DrawLine(0.892, 0.0, 0.892, fixedLineLength);
+    } 
+    if (kapi)  l.DrawLine(0.892, 0.0, 0.892, fixedLineLength);
+    if (piPro) l.DrawLine(1.115, 0.0, 1.115, fixedLineLength);
 
     TString fd_str   = "Feed down: ";
     TString full_str = "Full recon: ";
