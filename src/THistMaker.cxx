@@ -32,7 +32,7 @@ using namespace std;
 ClassImp(THistMaker);
 
 THistMaker::THistMaker(TString inputFilePath, Int_t nBins, Double_t xlo, Double_t xhi) : 
-    fNbins(nBins), fXhi(xhi), fXlo(xlo), fInFile(inputFilePath),
+    fNbins(nBins), fXhi(xhi), fXlo(xlo), fInFile(inputFilePath), fTitleSuffix(""),
     // initiate member variables with 0
     fFile(0), fTree(0), fOutList(0), fOutputFile(0), 
     fTPCITSsignalEnries(0), fHist_onlyTPC_CD(0), fHist_fwd_CD(0), fHist_ad_CD(0),
@@ -43,7 +43,7 @@ THistMaker::THistMaker(TString inputFilePath, Int_t nBins, Double_t xlo, Double_
     fOutList = new TList();
     TString outFileFolder = "/home/ratzenboe/Documents/Pythia-stuff/InvariantMass_study/HistSave/";
     TString title = "histList";
-    if (fInFile.Contains("kaon_"))        fTitleSuffix = "_kaon";
+    if (fInFile.Contains("kaon_"))        fTitleSuffix += "_kaon";
     if (fInFile.Contains("pi_"))          fTitleSuffix += "_pi";
     if (fInFile.Contains("piKaon_"))      fTitleSuffix += "_piKaon";
     if (fInFile.Contains("piProton_"))    fTitleSuffix += "_piProton";
@@ -296,8 +296,8 @@ void THistMaker::Save2DMassHistInFile(TString outpath)
     gPad->SetLogz();
     fMassCompare->SetStats( false );
     fMassCompare->Draw("colz");
-    fMassCompare->GetXaxis()->SetTitle("2K_{Generated} [GeV/c^{2}]");
-    fMassCompare->GetYaxis()->SetTitle("2K_{Detected} [GeV/c^{2}]");
+    fMassCompare->GetXaxis()->SetTitle("2p_{gen} [GeV/c^{2}]");
+    fMassCompare->GetYaxis()->SetTitle("2p_{det} [GeV/c^{2}]");
 
     fMassCompare->GetXaxis()->SetTitleOffset(0.9);
     fMassCompare->GetXaxis()->SetTitleSize(0.05);
@@ -315,8 +315,9 @@ void THistMaker::Save2DMassHistInFile(TString outpath)
     /* feedText.SetTextColor(kRed); */
     /* feedText.DrawLatex(2.5, 1.8, "Feed down events"); */
     /* feedLine1.DrawLine(1.05,0.95,0.7,0.6); */
-    feedLine1.DrawLine(1.05,0.95,3.2*0.95,0.95);
-    feedLine1.DrawLine(1.05,0.95,3.0,2.9);
+    feedLine1.DrawLine(1.05*fXlo, 1.02*fXlo,0.95*fXhi,1.02*fXlo);
+    feedLine1.DrawLine(1.05*fXlo, 1.02*fXlo,0.95*fXhi,0.93*fXhi);
+    /* feedLine1.DrawLine(1.05,0.95,3.0,2.9); */
 
     c->SaveAs((outpath+"massComparison"+fTitleSuffix+".pdf").Data());
 

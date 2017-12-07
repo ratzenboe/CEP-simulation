@@ -266,11 +266,6 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, Bool_t sa
     }
     Int_t Npi = 0, Nka = 0, Nprot = 0;
     fHasRightNumber(Npi, Nka, Nprot);
-    if (Npi+Nka+Nprot != 0){
-        printf("Npi:   %i,            Nka: %i,              Nprot: %i\n", Npi, Nka, Nprot);
-        printf("fNpiP: %i, fNpiM: %i, fNkaP: %i, fNkaM: %i\n", fNpiP, fNpiM, fNkaP, fNkaM);
-        printf("\n------------------------ next event -----------------------\n");
-    }
     // only if has right particles is still true we can set it to false
     if (fHasRightParticlesInTPCITS){
         switch(mode){
@@ -312,19 +307,21 @@ void EventHandler::fIsDetected(void)
 void EventHandler::fHasRightNumber(Int_t& Npi, Int_t& Nka, Int_t &Npro)
 {
     if ( fNprotP==0 && fNprotM==0 ){
-        if ( (fNpiP == 1 && fNpiM == 1) && fNkaP == 0 && fNkaM == 0 ) Npi = 2; return ;
-        else if ( (fNpiP == 2 && fNpiM == 2) && fNkaP == 0 && fNkaM == 0 ) Npi = 4; return ;
-        else if ( (fNkaP == 1 && fNkaM == 1) && fNpiP == 0 && fNpiM == 0 ) Nka = 2; return ;
-        else if ( (fNkaP == 2 && fNkaM == 2) && fNpiP == 0 && fNpiM == 0 ) Nka = 4; return ;
-        else if ( (fNkaP == 1 && fNkaM == 0) && fNpiP == 0 && fNpiM == 1 ) Npi = 1; Nka = 1; return ;
-        else if ( (fNkaP == 0 && fNkaM == 1) && fNpiP == 1 && fNpiM == 0 ) Npi = 1; Nka = 1; return ;
-        else if ( (fNkaP == 0 && fNkaM == 1) && fNpiP == 1 && fNpiM == 0 ) Npi = 1; Nka = 1; return ;
+        if ( (fNpiP == 1 && fNpiM == 1) && fNkaP == 0 && fNkaM == 0 ){ Npi = 2; return ;}
+        else if ((fNpiP == 2 && fNpiM == 2) && fNkaP == 0 && fNkaM == 0){ Npi = 4; return ;}
+        else if ((fNkaP == 1 && fNkaM == 1) && fNpiP == 0 && fNpiM == 0){ Nka = 2; return ;}
+        else if ((fNkaP == 2 && fNkaM == 2) && fNpiP == 0 && fNpiM == 0){ Nka = 4; return ;}
+        else if ((fNkaP == 1 && fNkaM == 0) && fNpiP == 0 && fNpiM == 1){ Npi = 1; Nka = 1; return ;}
+        else if ((fNkaP == 0 && fNkaM == 1) && fNpiP == 1 && fNpiM == 0){ Npi = 1; Nka = 1; return ;}
+        else if ((fNkaP == 0 && fNkaM == 1) && fNpiP == 1 && fNpiM == 0){ Npi = 1; Nka = 1; return ;}
         else return ;
     } 
     else if ( fNkaM == 0 && fNkaP == 0 ) {
-        if ( (fNprotP == 1 && fNprotM == 0) && (fNpiP==0 && fNpiM==1) ) Npro = 1; Npi = 1; return ;
-        else if ( (fNprotP == 1 && fNprotM == 0) && (fNpiP==0 && fNpiM==1) ) Npro = 1; Npi = 1; return ;
-        else if ( (fNprotP == 1 && fNprotM == 1) && (fNpiP==0 && fNpiM==0) ) Npro = 2; return ;
+        if ((fNprotP == 1 && fNprotM == 0) && (fNpiP==0 && fNpiM==1)){ Npro = 1; Npi = 1; return ;}
+        else if ((fNprotP == 1 && fNprotM == 0) && (fNpiP==0 && fNpiM==1)){ 
+            Npro = 1; Npi = 1; return ;}
+        else if ((fNprotP == 1 && fNprotM == 1) && (fNpiP==0 && fNpiM==0)){ Npro = 2; return ;}
+        else return ;
     } else return ;
 }
 //_____________________________________________________________________________
