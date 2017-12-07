@@ -99,7 +99,6 @@ THistMaker::THistMaker(TString inputFilePath, TString title,
     Int_t bin_hi_fd      = fHist_onlyTPC_feedDown->FindBin(fXhi);    
     fTPCITSsignalEnries += fHist_onlyTPC_CD->Integral(bin_lo_CD, bin_hi_CD);
     fTPCITSsignalEnries += fHist_onlyTPC_feedDown->Integral(bin_lo_fd, bin_hi_fd);
-    printf("fTPCITSsignalEnries: %i", fTPCITSsignalEnries);
 }
 //_______________________________________________________________________________
 THistMaker::~THistMaker(void)
@@ -179,10 +178,10 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
     signal_cd_fd.Add(&hist_cd);
     signal_cd_fd.Add(&hist_fd);
     // scale the hsitograms 
-    /* Double_t scale_norm = 1./double(fTPCITSsignalEnries); */
-    /* signal_cd_fd.Scale(scale_norm); */
-    /* hist_cd.Scale(scale_norm); */
-    /* hist_fd.Scale(scale_norm); */
+    Double_t scale_norm = 1./double(fTPCITSsignalEnries);
+    signal_cd_fd.Scale(scale_norm);
+    hist_cd.Scale(scale_norm);
+    hist_fd.Scale(scale_norm);
     // Draw the histograms
     // later we care about the style
     signal_cd_fd.Draw("EP");
@@ -237,10 +236,11 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
     latex.SetTextColor(13);
     Double_t mult = 0.9;
     // for KK in 45 mio CEP sample
-    Double_t add_toright = 0.05;
-    if (kapi || piPro) add_toright = 0.06;
+    Double_t add_toright = 0.06;
+    /* if (kapi || piPro) add_toright = 0.06; */
     Double_t fixedLineLength = 0.5;
-    Double_t lineScale = 0.3;
+    Double_t lineScale = 0.3*10e-4;
+    if (kaon && mode > 0) lineScale = 0.1;
     if (kapi || piPro) lineScale = 10e-5;
     Double_t xMax_phi   = signal_cd_fd.GetBinContent(signal_cd_fd.GetXaxis()->FindBin(1.02))*mult;
     Double_t xMax_f2    = signal_cd_fd.GetBinContent(signal_cd_fd.GetXaxis()->FindBin(1.27))*mult;
@@ -248,9 +248,9 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
     Double_t xMax_f2rho = signal_cd_fd.GetBinContent(signal_cd_fd.GetXaxis()->FindBin(1.56))*mult;
     if (kaon) {
         latex.DrawLatex(1.02+add_toright,  lineScale*fixedLineLength, "#phi(1020)");
-        latex.DrawLatex(1.27+add_toright,  lineScale*fixedLineLength, "f2(1270)");
-        latex.DrawLatex(1.42+add_toright,  lineScale*fixedLineLength, "f2, #omega(1420)");
-        latex.DrawLatex(1.567+add_toright, lineScale*fixedLineLength, "f2, #rho(1570)");
+        /* latex.DrawLatex(1.27+add_toright,  lineScale*fixedLineLength, "f2(1270)"); */
+        /* latex.DrawLatex(1.42+add_toright,  lineScale*fixedLineLength, "f2, #omega(1420)"); */
+        latex.DrawLatex(1.525+add_toright, lineScale*fixedLineLength, "f'1(1525)");
     } 
     if(kapi)  latex.DrawLatex(0.892+add_toright,lineScale*fixedLineLength,"K*(892)");
     if(piPro) latex.DrawLatex(1.115+add_toright,lineScale*fixedLineLength,"#Lambda^{0}(1115)");
@@ -261,9 +261,9 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
     l.SetLineColor(13);
     if (kaon) {
         l.DrawLine(1.02, 0.0, 1.02, fixedLineLength);
-        l.DrawLine(1.27, 0.0, 1.27, fixedLineLength);
-        l.DrawLine(1.42, 0.0, 1.42, fixedLineLength);
-        l.DrawLine(1.56, 0.0, 1.56, fixedLineLength);
+        /* l.DrawLine(1.27, 0.0, 1.27, fixedLineLength); */
+        /* l.DrawLine(1.42, 0.0, 1.42, fixedLineLength); */
+        l.DrawLine(1.525, 0.0, 1.525, fixedLineLength);
     } 
     if (kapi)  l.DrawLine(0.892, 0.0, 0.892, fixedLineLength);
     if (piPro) l.DrawLine(1.115, 0.0, 1.115, fixedLineLength);

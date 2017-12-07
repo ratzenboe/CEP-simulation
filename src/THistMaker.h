@@ -37,7 +37,7 @@ class THistMaker
         TH1F*               fHist_ad_feedDown;
         TH1F*               fHist_emc_CD;
         TH1F*               fHist_emc_feedDown;
-        Double_t            fTPCITSsignalEnries;
+        Int_t               fTPCITSsignalEnries;
         // mass comparison for the AD case
         // measured mass VS real mass
         TH2D*               fMassCompare;
