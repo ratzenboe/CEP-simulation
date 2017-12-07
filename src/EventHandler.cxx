@@ -132,9 +132,11 @@ void EventHandler::EventInitilizer(Int_t mode, Int_t maxEvts, Bool_t saveEvtInfo
     if (mode==1) op += "kaon_";    
     if (mode==2) op += "piKaon_";
     if (mode==3) op += "piProton_";
+    if (mode==4) op += "antipProton_";
     TFile* o_fEvtFile  = new TFile((op+"evt.root").Data(),  "RECREATE");
     TTree* fOutTreeEvt  = new TTree("event", "event tree");
 
+    printf("Generated new output file: %s", (op+"evt.root").Data());
     fOutTreeEvt->Branch("fDiffrCode",                 &fDiffrCode);
     fOutTreeEvt->Branch("fEventNb",                   &fEventNb); 
     fOutTreeEvt->Branch("fHasRightParticlesInTPCITS", &fHasRightParticlesInTPCITS); 
@@ -273,6 +275,8 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, Bool_t sa
         fHasRightParticlesInTPCITS = (Npi==1 && Nka==1 && Nprot ==0) ? true : false;
     if (fHasRightParticlesInTPCITS && mode==3) 
         fHasRightParticlesInTPCITS = (Npi==1 && Nka==0 && Nprot ==1) ? true : false;    
+    if (fHasRightParticlesInTPCITS && mode==4) 
+        fHasRightParticlesInTPCITS = (Npi==0 && Nka==0 && Nprot ==2) ? true : false;    
     fInvarMass = vtot.M();
     if (saveEvtInfo && fPyt && fHasRightParticlesInTPCITS) (*fPythiaEvent).list(os);
     // fill the tree
@@ -334,6 +338,9 @@ Bool_t EventHandler::fHasRightNumber(Int_t& Npi, Int_t& Nka, Int_t &Npro)
             Npro = 1;
             Npi  = 1;
             return true;
+        } else if ( (fNprotP == 1 && fNprotM == 1) && (fNpiP==0 && fNpiM==0) ){
+            Npro = 2;
+            return true;
         } else return false;
     } else return false;
 }
@@ -390,6 +397,16 @@ Bool_t EventHandler::setPDGval(Int_t mode)
             fNprotM++;
             return true;
         } else return false;
-     } else return false;
+    } else if (mode==4){
+        // in mode 4 we look at protons and antiprotons
+        if ( fPdg == 2212 ){
+            fNprotP++;
+            return true;
+        } else if ( fPdg == -2212 ){
+            fNprotM++;
+            return true;
+        } else return false;
+
+    } else return false;
 }
 //_____________________________________________________________________________
