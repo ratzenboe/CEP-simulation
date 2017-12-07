@@ -50,7 +50,7 @@ EventHandler::EventHandler(TString inFilename, TString outpath) :
     fEta(0), fPhi(0), fPt(0), fVx(0), fVy(0), fVz(0), fPdg(0), fEventNb(0), fDiffrCode(-1),
     // output to event file (also with event number and diffractive code)
     fHasRightParticlesInTPCITS(false), fWholeEvtDetected(false), fHitInForwardDets(false), 
-    fInvarMass(0), fHitInAD(0), fDetGammaEt(0), fGammaInEMCal(false),
+    fInvarMass(0), fHitInAD(0), fDetGammaEt(0), fGammaInEMCal(false), fFromCEP(-1),
     fLoopCounter(0), fKin(false), fPyt(false)
 {
     // constructor
@@ -146,6 +146,9 @@ void EventHandler::EventInitilizer(Int_t mode, Int_t maxEvts, Bool_t saveEvtInfo
     fOutTreeEvt->Branch("fHitInForwardDets",          &fHitInForwardDets); 
     fOutTreeEvt->Branch("fHitInAD",                   &fHitInAD); 
     fOutTreeEvt->Branch("fGammaInEMCal",              &fGammaInEMCal); 
+    // if the detected particles come directely from the CEP particle
+    // or e.g. from CEP -> 2rho -> 4pi (makes only sense for full recon evts)
+    fOutTreeEvt->Branch("fFromCEP",                   &fFromCEP); 
     /* fOutTreeEvt->Branch("fDetGammaEt",                &fDetGammaEt); */ 
 
     Int_t iEvent = 0;
@@ -188,8 +191,12 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, Bool_t sa
 
     fDiffrCode = 0;
     Double_t charge, phi_det;
-    Int_t statCode = 0, pythiaStatCode = 0;
+    Int_t statCode = 0, pythiaStatCode = 0, idMom = 0;
     Double_t mass;
+    // to assess if the particles come from the CEP or from a daughter of it
+    // is neccessary for fFromCEP
+    std::vector<Int_t> pdgMomVec;
+    pdgMomVec.clear();
     for (Int_t i = 1; i < evtsize; i++) {
         // default value, if no gamma is in emcal, this way we can 
         // check what the gamma-et distribution is
@@ -200,6 +207,8 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, Bool_t sa
             fEta = fPart->Eta();
             fPhi = fPart->Phi();
             fPt  = fPart->Pt();
+            idMom = fPart->GetMother(0);
+            mother1 = (abs(idMom) < 10 || idMom==21) ? 1 : idMom;
         }
         if (fPyt){     
             fPdg = (*fPythiaEvent)[i].id();
@@ -210,6 +219,9 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, Bool_t sa
             fPhi = (*fPythiaEvent)[i].phi();
             fPt  = (*fPythiaEvent)[i].pT();
             pythiaStatCode = (*fPythiaEvent)[i].status();
+            idMom = (*fPythiaEvent)[(*fPythiaEvent)[i].mother1()].id();
+            // either a quark <10 or a gluon==21
+            mother1 = (abs(idMom) < 10 || idMom==21) ? 1 : idMom;
             PrintDebug("no problem accessing fPythia");
         } 
         if ( fPdg == 9900110 ){
@@ -257,6 +269,7 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, Bool_t sa
             else{
                 vTemp.SetPtEtaPhiM(fPt, fEta, fPhi, mass);
                 vtot += vTemp;
+                pdgMomVec.push_back(mother1);
             }
         } 
         // ########################## end ###########################################
@@ -298,8 +311,24 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, Bool_t sa
         os << "fHitInForwardDets: " << fHitInForwardDets << endl;
         (*fPythiaEvent).list(os);
     }
-    // fill the tree
+    // checkout if the particles come from the CEP or from another particle
+    Int_t vectorSum(0), CEPMomCounter(0);
 
+    for (Unsigned i(0); i < pdgMomVec.size(); i++){
+        vectorSum += pdgMomVec[i];
+        if (pdgMomVec==1) CEPMomCounter++;
+    }
+    // if all come from CEP: 0
+    if (pdgMomVec.size() > 1 && fWholeEvtDetected){
+        if (CEPMomCounter==pdgMomVec.size()) fFromCEP = 0;
+        // if all come from a different particle we put the particles pdg code
+        // the adjacent_find with not_equal_to looks if all the elements in a vector are the same  
+        else if (CEPMomCounter==0 && 
+                std::adjacent_find( pdgMomVec.begin(), pdgMomVec.end(), 
+                    std::not_equal_to<Int_t>() ) == pdgMomVec.end() ) fFromCEP = pdgMomVec[0];
+        else fFromCEP = -1;
+    }
+    // fill the tree
     if (fHasRightParticlesInTPCITS && tree->GetBranch("fHitInAD")) tree->Fill();
     PrintDebug("evt tree fill");
     return ;
