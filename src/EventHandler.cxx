@@ -269,7 +269,8 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, Bool_t sa
     // only if has right particles is still true we can set it to false
     if (fHasRightParticlesInTPCITS){
         switch(mode){
-            case pipi: fHasRightParticlesInTPCITS = (Npi==2 && Nka==0 && Nprot ==0) ? true : false;                       break;
+            case pipi: fHasRightParticlesInTPCITS = (Npi==2 && Nka==0 && Nprot ==0) ? true : false;
+                       break;
             case kaka: fHasRightParticlesInTPCITS = (Npi==0 && Nka==2 && Nprot ==0) ? true : false;
                        break;
             case pika: fHasRightParticlesInTPCITS = (Npi==1 && Nka==1 && Nprot ==0) ? true : false;
