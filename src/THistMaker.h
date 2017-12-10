@@ -28,22 +28,34 @@ class THistMaker
         TFile*              fFile;
         TTree*              fTree;
         // histograms
-        TH1F*               fHist_onlyTPC_CD;
+        TH1F*               fHist_TPC_CD;
+        TH1F*               fHist_TPC_feedD;
+        TH1F*               fHist_TPC_fromCEP;
+        TH1F*               fHist_TPC_fromDiff;
         TH1F*               fHist_fwd_CD;
+        TH1F*               fHist_fwd_feedD;
+        TH1F*               fHist_fwd_fromCEP;
+        TH1F*               fHist_fwd_fromDiff;
         TH1F*               fHist_ad_CD;
-        TH1F*               fHist_onlyTPC_feedDown;
-        TH1F*               fHist_fwd_feedDown;
-        TH1F*               fHist_ad_feedDown;
+        TH1F*               fHist_ad_fromCEP;
+        TH1F*               fHist_ad_feedD;
+        TH1F*               fHist_ad_fromDiff;
         TH1F*               fHist_emc_CD;
-        TH1F*               fHist_emc_feedDown;
+        TH1F*               fHist_emc_feedD;
+        TH1F*               fHist_emc_fromCEP;
+        TH1F*               fHist_emc_fromDiff;
+        // scaling factor of the histogram
         Int_t               fTPCITSsignalEnries;
         // mass comparison for the AD case
         // measured mass VS real mass
         TH2D*               fMassCompare;
         TString             fInFile;
+        TString             fTitleSuffix;
+        Bool_t              fShowCEPComponents;
         Int_t               fNbins;
         Double_t            fXhi;
         Double_t            fXlo;
+        // Branches
         Int_t               fDiffrCode;
         Bool_t              fHitInForwardDets;
         Bool_t              fHitInAD;
@@ -53,6 +65,8 @@ class THistMaker
         Double_t            fRealInvarMass;
         Bool_t              fWholeEvtDetected;
         Bool_t              fHasRightParticlesInTPCITS;
+        Int_t               fFromCEP;
+        // histograms may be saved in a list
         TList*              fOutList;
         TFile*              fOutputFile;
 };
