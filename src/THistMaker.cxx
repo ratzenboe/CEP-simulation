@@ -128,22 +128,33 @@ THistMaker::THistMaker(TString inputFilePath, Int_t nBins, Double_t xlo, Double_
         else fHist_emc_CD->Fill(fInvarMass);
 
     }
-    Int_t bin_lo_CD      = fHist_TPC_CD->FindBin(fXlo);
-    Int_t bin_hi_CD      = fHist_TPC_CD->FindBin(fXhi);
-    Int_t bin_lo_fd      = fHist_TPC_feedD->FindBin(fXlo);
-    Int_t bin_hi_fd      = fHist_TPC_feedD->FindBin(fXhi);    
-    fTPCITSsignalEnries += fHist_TPC_CD->Integral(bin_lo_CD, bin_hi_CD);
-    fTPCITSsignalEnries += fHist_TPC_feedD->Integral(bin_lo_fd, bin_hi_fd);
+    fTPCITSsignalEnries += fHist_TPC_CD->GetEntries();
+    fTPCITSsignalEnries += fHist_TPC_feedD->GetEntries();
+    if (fShowCEPComponents) {
+        fTPCITSsignalEnries += fHist_TPC_fromCEP->GetEntries();
+        fTPCITSsignalEnries += fHist_TPC_fromDiff->GetEntries();
+    }
 }
 //_______________________________________________________________________________
 THistMaker::~THistMaker(void)
 {
     delete fHist_TPC_CD;
     delete fHist_TPC_feedD;
+    delete fHist_TPC_fromCEP;
+    delete fHist_TPC_fromDiff;
     delete fHist_fwd_CD;
     delete fHist_fwd_feedD;
+    delete fHist_fwd_fromCEP;
+    delete fHist_fwd_fromDiff;
     delete fHist_ad_CD;
     delete fHist_ad_feedD;
+    delete fHist_ad_fromCEP;
+    delete fHist_ad_fromDiff;
+    delete fHist_emc_CD;
+    delete fHist_emc_feedD;
+    delete fHist_emc_fromCEP;
+    delete fHist_emc_fromDiff;
+
 
     fOutputFile->Close();
     delete fOutputFile;
