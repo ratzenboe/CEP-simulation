@@ -103,26 +103,28 @@ THistMaker::THistMaker(TString inputFilePath, Int_t nBins, Double_t xlo, Double_
         if (fDiffrCode != 3) continue;
         if (!fHasRightParticlesInTPCITS) continue;
         // fill the TPC/ITS histograms
-        if (!fWholeEvtDetected) fHist_TPC_feedD->Fill(fInvarMass);
-        else if (!fShowCEPComponents) fHist_TPC_CD->Fill(fInvarMass);
-        else if (fShowCEPComponents && fFromCEP==0) fHist_allfromCEP->Fill(fInvarMass);
-        else if (fShowCEPComponents && fFromCEP>0) fHist_allfromDifferent->Fill(fInvarMass);
+        if (!fWholeEvtDetected)                     fHist_TPC_feedD->Fill(fInvarMass);
+        else if (fShowCEPComponents && fFromCEP==0) fHist_TPC_fromCEP->Fill(fInvarMass);
+        else if (fShowCEPComponents && fFromCEP>0)  fHist_TPC_fromDiff->Fill(fInvarMass);
         else fHist_TPC_CD->Fill(fInvarMass);
         // fill hits in FWD 
         if (fHitInForwardDets) continue;
         if (!fWholeEvtDetected) fHist_fwd_feedD->Fill(fInvarMass);
-        else if (!fShowCEPComponents) fHist_fwd_CD->Fill(fInvarMass);
-        else if (fShowCEPComponents && fFromCEP==0) fHist_allfromCEP->Fill(fInvarMass);
-        else if (fShowCEPComponents && fFromCEP>0) fHist_allfromDifferent->Fill(fInvarMass);
+        else if (fShowCEPComponents && fFromCEP==0) fHist_fwd_fromCEP->Fill(fInvarMass);
+        else if (fShowCEPComponents && fFromCEP>0)  fHist_fwd_fromDiff->Fill(fInvarMass);
         else fHist_fwd_CD->Fill(fInvarMass);
         // additional AD detector
         if (fHitInAD) continue;
         if (!fWholeEvtDetected) fHist_ad_feedD->Fill(fInvarMass);
+        else if (fShowCEPComponents && fFromCEP==0) fHist_ad_fromCEP->Fill(fInvarMass);
+        else if (fShowCEPComponents && fFromCEP>0)  fHist_ad_fromDiff->Fill(fInvarMass);        
         else fHist_ad_CD->Fill(fInvarMass);
         fMassCompare->Fill(fRealInvarMass, fInvarMass);
         // additional EMCal
         if (fGammaInEMCal) continue;
         if (!fWholeEvtDetected) fHist_emc_feedD->Fill(fInvarMass);
+        else if (fShowCEPComponents && fFromCEP==0) fHist_emc_fromCEP->Fill(fInvarMass);
+        else if (fShowCEPComponents && fFromCEP>0)  fHist_emc_fromDiff->Fill(fInvarMass);        
         else fHist_emc_CD->Fill(fInvarMass);
 
     }
