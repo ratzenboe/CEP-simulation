@@ -155,7 +155,6 @@ THistMaker::~THistMaker(void)
     delete fHist_emc_fromCEP;
     delete fHist_emc_fromDiff;
 
-
     fOutputFile->Close();
     delete fOutputFile;
     /* fFile->Close(); */
@@ -178,7 +177,8 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
     else if (mode==1) title="Forward";
     else if (mode==2) title="AD";
     else title="EMCal";    
-    Bool_t kaon = false, kapi = false, pion = false, piPro = false, pp = false;
+    Bool_t kaon = false, kapi = false, pion = false, piPro = false, pp = false,
+           fourPi = false, fourKa = false;
     if (fInFile.Contains("kaon_"))        kaon = true;
     if (fInFile.Contains("pi_"))          pion = true;
     if (fInFile.Contains("piKaon_"))      kapi = true;
@@ -187,19 +187,29 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
     // we only care for one plot at a time
     TH1F hist_cd;
     TH1F hist_fd;
+    TH1F hist_fromCEP;
+    TH1F hist_fromDiff;
     if (mode==0){
-        hist_cd = *((TH1F*)fHist_TPC_CD->Clone());
-        hist_fd = *((TH1F*)fHist_TPC_feedD->Clone());
+        hist_cd       = *((TH1F*)fHist_TPC_CD->Clone());
+        hist_fd       = *((TH1F*)fHist_TPC_feedD->Clone());
+        hist_fromCEP  = *((TH1F*)fHist_TPC_fromCEP->Clone());
+        hist_fromDiff = *((TH1F*)fHist_TPC_fromDiff->Clone());
     } else if (mode==1){
-        hist_cd = *((TH1F*)fHist_fwd_CD->Clone());
-        hist_fd = *((TH1F*)fHist_fwd_feedD->Clone());
-    } else if (mode==2){
-        hist_cd = *((TH1F*)fHist_ad_CD->Clone());
-        hist_fd = *((TH1F*)fHist_ad_feedD->Clone());
-    } else {
-        hist_cd = *((TH1F*)fHist_emc_CD->Clone());
-        hist_fd = *((TH1F*)fHist_emc_feedD->Clone());
-    }
+        hist_cd       = *((TH1F*)fHist_fwd_CD->Clone());
+        hist_fd       = *((TH1F*)fHist_fwd_feedD->Clone());
+        hist_fromCEP  = *((TH1F*)fHist_fwd_fromCEP->Clone());
+        hist_fromDiff = *((TH1F*)fHist_fwd_fromDiff->Clone());
+     } else if (mode==2){
+        hist_cd       = *((TH1F*)fHist_ad_CD->Clone());
+        hist_fd       = *((TH1F*)fHist_ad_feedD->Clone());
+        hist_fromCEP  = *((TH1F*)fHist_ad_fromCEP->Clone());
+        hist_fromDiff = *((TH1F*)fHist_ad_fromDiff->Clone());
+     } else {
+        hist_cd       = *((TH1F*)fHist_emc_CD->Clone());
+        hist_fd       = *((TH1F*)fHist_emc_feedD->Clone());
+        hist_fromCEP  = *((TH1F*)fHist_emc_fromCEP->Clone());
+        hist_fromDiff = *((TH1F*)fHist_emc_fromDiff->Clone());
+     }
 
     TCanvas* c = new TCanvas( ("c"+title).Data(), "c", 1500, 1000 );
     gStyle->SetOptStat(0);
