@@ -35,10 +35,8 @@ THistMaker::THistMaker(TString inputFilePath, Int_t nBins, Double_t xlo, Double_
     fNbins(nBins), fXhi(xhi), fXlo(xlo), fInFile(inputFilePath), fTitleSuffix(""),
     // initiate member variables with 0
     fFile(0), fTree(0), fOutList(0), fOutputFile(0), fTPCITSsignalEnries(0),
-    fHist_TPC_CD(0), fHist_TPC_feedD(0), fHist_TPC_fromCEP(0), fHist_TPC_fromDiff(0),
-    fHist_fwd_CD(0), fHist_fwd_feedD(0), fHist_fwd_fromCEP(0), fHist_fwd_fromDiff(0),
-    fHist_ad_CD(0),  fHist_ad_feedD(0),  fHist_ad_fromCEP(0),  fHist_ad_fromDiff(0),
-    fHist_emc_CD(0), fHist_emc_feedD(0), fHist_emc_fromCEP(0), fHist_emc_fromDiff(0),
+    fHist_CD(0), fHist_fromCEP(0), fHist_fromRho(0), fHist_fromKStar(0),
+    fHist_TPC_feedDown(0), fHist_fwd_feedDown(0), fHist_ad_feedDown(0), fHist_emc_feedDown(0), 
     fMassCompare(0), fDiffrCode(-1), fHitInForwardDets(false), fHitInAD(false), fEventNb(0), 
     fInvarMass(0),  fGammaInEMCal(false), fWholeEvtDetected(false), fFromCEP(-1),
     fHasRightParticlesInTPCITS(false), fShowCEPComponents(false)
@@ -76,26 +74,16 @@ THistMaker::THistMaker(TString inputFilePath, Int_t nBins, Double_t xlo, Double_
     fTree->SetBranchAddress("fFromCEP",                   &fFromCEP);
 
     // create the histograms (true CD)
-    fHist_TPC_CD       = new TH1F("onlyITS_TPC_CD", "only ITS TPC",           nBins, xlo, xhi);
-    fHist_fwd_CD       = new TH1F("forwardDet_CD", "forward detectors on",    nBins, xlo, xhi);
-    fHist_ad_CD        = new TH1F("ADDet_CD", "AD detectors on",              nBins, xlo, xhi);
-    fHist_emc_CD       = new TH1F("EMC_det", "EMCal on",                      nBins, xlo, xhi);
+    fHist_CD           = new TH1F("CEP_full_recon", "full recon in TPC",      nBins, xlo, xhi);
+    fHist_fromCEP      = new TH1F("CEP_origin",     "parts from CEP",         nBins, xlo, xhi);
+    fHist_fromRho      = new TH1F("Rho_origin",     "parts from rho",         nBins, xlo, xhi);
+    fHist_fromKStar    = new TH1F("KStar_origin",   "parts from K-star",      nBins, xlo, xhi);
     // feed down histograms
-    fHist_TPC_feedD    = new TH1F("onlyITS_TPC_FeedD", "only ITS TPC",        nBins, xlo, xhi);
-    fHist_fwd_feedD    = new TH1F("forwardDet_FeedD", "forward detectors on", nBins, xlo, xhi);
-    fHist_ad_feedD     = new TH1F("ADDet_FeedD", "AD detectors on",           nBins, xlo, xhi);
-    fHist_emc_feedD    = new TH1F("emc_FeedD", "EMCal on",                    nBins, xlo, xhi);
-    // final paricles coming directly from the CEP particles
-    fHist_TPC_fromCEP  = new TH1F("onlyITS_TPC_fromCEP", "only ITS TPC",        nBins, xlo, xhi);
-    fHist_fwd_fromCEP  = new TH1F("forwardDet_fromCEP", "forward detectors on", nBins, xlo, xhi);
-    fHist_ad_fromCEP   = new TH1F("ADDet_fromCEP", "AD detectors on",           nBins, xlo, xhi);
-    fHist_emc_fromCEP  = new TH1F("emc_fromCEP", "EMCal on",                    nBins, xlo, xhi);
-    // final paricles coming all from the same (pdg wise) particles (e.g. 2 rhos)
-    fHist_TPC_fromDiff = new TH1F("onlyITS_TPC_fromDiff", "only ITS TPC",        nBins, xlo, xhi);
-    fHist_fwd_fromDiff = new TH1F("forwardDet_fromDiff", "forward detectors on", nBins, xlo, xhi);
-    fHist_ad_fromDiff  = new TH1F("ADDet_fromDiff", "AD detectors on",           nBins, xlo, xhi);
-    fHist_emc_fromDiff = new TH1F("emc_fromDiff", "EMCal on",                    nBins, xlo, xhi);
-     // 2D mass comparison histogram
+    fHist_TPC_feedDown = new TH1F("onlyITS_TPC_FeedD", "only ITS TPC",        nBins, xlo, xhi);
+    fHist_fwd_feedDown = new TH1F("forwardDet_FeedD", "forward detectors on", nBins, xlo, xhi);
+    fHist_ad_feedDown  = new TH1F("ADDet_FeedD", "AD detectors on",           nBins, xlo, xhi);
+    fHist_emc_feedDown = new TH1F("emc_FeedD", "EMCal on",                    nBins, xlo, xhi);
+    // 2D mass comparison histogram
     fMassCompare           = new TH2D("Mass comparison", "AD det mass comp",
                                                                  nBins, xlo, xhi, nBins, xlo, xhi);
     for (unsigned i(0); i<fTree->GetEntries(); i++){
@@ -103,57 +91,41 @@ THistMaker::THistMaker(TString inputFilePath, Int_t nBins, Double_t xlo, Double_
         if (fDiffrCode != 3) continue;
         if (!fHasRightParticlesInTPCITS) continue;
         // fill the TPC/ITS histograms
-        if (!fWholeEvtDetected)                     fHist_TPC_feedD->Fill(fInvarMass);
-        else if (fShowCEPComponents && fFromCEP==0) fHist_TPC_fromCEP->Fill(fInvarMass);
-        else if (fShowCEPComponents && fFromCEP>0)  fHist_TPC_fromDiff->Fill(fInvarMass);
-        else fHist_TPC_CD->Fill(fInvarMass);
+        if (!fWholeEvtDetected)                       fHist_TPC_feedDown->Fill(fInvarMass);
+        else if (fShowCEPComponents && fFromCEP==0)   fHist_fromCEP->Fill(fInvarMass);
+        else if (fShowCEPComponents && fFromCEP==113) fHist_fromRho->Fill(fInvarMass);
+        else if (fShowCEPComponents && fFromCEP==310) fHist_fromKStar->Fill(fInvarMass);
+        else                                          fHist_CD->Fill(fInvarMass);
         // fill hits in FWD 
         if (fHitInForwardDets) continue;
-        if (!fWholeEvtDetected) fHist_fwd_feedD->Fill(fInvarMass);
-        else if (fShowCEPComponents && fFromCEP==0) fHist_fwd_fromCEP->Fill(fInvarMass);
-        else if (fShowCEPComponents && fFromCEP>0)  fHist_fwd_fromDiff->Fill(fInvarMass);
-        else fHist_fwd_CD->Fill(fInvarMass);
+        if (!fWholeEvtDetected)                       fHist_fwd_feedDown->Fill(fInvarMass);
         // additional AD detector
         if (fHitInAD) continue;
-        if (!fWholeEvtDetected) fHist_ad_feedD->Fill(fInvarMass);
-        else if (fShowCEPComponents && fFromCEP==0) fHist_ad_fromCEP->Fill(fInvarMass);
-        else if (fShowCEPComponents && fFromCEP>0)  fHist_ad_fromDiff->Fill(fInvarMass);        
-        else fHist_ad_CD->Fill(fInvarMass);
+        if (!fWholeEvtDetected)                       fHist_ad_feedDown->Fill(fInvarMass);
         fMassCompare->Fill(fRealInvarMass, fInvarMass);
         // additional EMCal
         if (fGammaInEMCal) continue;
-        if (!fWholeEvtDetected) fHist_emc_feedD->Fill(fInvarMass);
-        else if (fShowCEPComponents && fFromCEP==0) fHist_emc_fromCEP->Fill(fInvarMass);
-        else if (fShowCEPComponents && fFromCEP>0)  fHist_emc_fromDiff->Fill(fInvarMass);        
-        else fHist_emc_CD->Fill(fInvarMass);
-
+        if (!fWholeEvtDetected)                       fHist_emc_feedDown->Fill(fInvarMass);
     }
     fTPCITSsignalEnries += fHist_TPC_CD->GetEntries();
-    fTPCITSsignalEnries += fHist_TPC_feedD->GetEntries();
+    fTPCITSsignalEnries += fHist_TPC_feedDown->GetEntries();
     if (fShowCEPComponents) {
-        fTPCITSsignalEnries += fHist_TPC_fromCEP->GetEntries();
-        fTPCITSsignalEnries += fHist_TPC_fromDiff->GetEntries();
+        fTPCITSsignalEnries += fHist_fromRho->GetEntries();
+        fTPCITSsignalEnries += fHist_fromKStar->GetEntries();
+        fTPCITSsignalEnries += fHist_fromCEP->GetEntries();
     }
 }
 //_______________________________________________________________________________
 THistMaker::~THistMaker(void)
 {
-    delete fHist_TPC_CD;
-    delete fHist_TPC_feedD;
-    delete fHist_TPC_fromCEP;
-    delete fHist_TPC_fromDiff;
-    delete fHist_fwd_CD;
-    delete fHist_fwd_feedD;
-    delete fHist_fwd_fromCEP;
-    delete fHist_fwd_fromDiff;
-    delete fHist_ad_CD;
-    delete fHist_ad_feedD;
-    delete fHist_ad_fromCEP;
-    delete fHist_ad_fromDiff;
-    delete fHist_emc_CD;
-    delete fHist_emc_feedD;
-    delete fHist_emc_fromCEP;
-    delete fHist_emc_fromDiff;
+    delete fHist_CD;
+    delete fHist_fromCEP;
+    delete fHist_fromKStar;
+    delete fHist_fromRho;
+    delete fHist_TPC_feedDown;
+    delete fHist_fwd_feedDown;
+    delete fHist_ad_feedDown;
+    delete fHist_emc_feedDown;
 
     fOutputFile->Close();
     delete fOutputFile;
@@ -185,32 +157,21 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
     if (fInFile.Contains("piProton_"))    piPro = true;
     if (fInFile.Contains("antipProton_")) pp = true;
     // we only care for one plot at a time
-    TH1F hist_cd;
+    TH1F hist_cd  = *((TH1F*)fHist_TPC_CD->Clone());
     TH1F hist_fd;
+    if      (mode==0) hist_fd = *((TH1F*)fHist_TPC_feedD->Clone());
+    else if (mode==1) hist_fd = *((TH1F*)fHist_fwd_feedD->Clone());
+    else if (mode==2) hist_fd = *((TH1F*)fHist_ad_feedD->Clone());
+    else              hist_fd = *((TH1F*)fHist_emc_feedD->Clone());
     TH1F hist_fromCEP;
-    TH1F hist_fromDiff;
-    if (mode==0){
-        hist_cd       = *((TH1F*)fHist_TPC_CD->Clone());
-        hist_fd       = *((TH1F*)fHist_TPC_feedD->Clone());
-        hist_fromCEP  = *((TH1F*)fHist_TPC_fromCEP->Clone());
-        hist_fromDiff = *((TH1F*)fHist_TPC_fromDiff->Clone());
-    } else if (mode==1){
-        hist_cd       = *((TH1F*)fHist_fwd_CD->Clone());
-        hist_fd       = *((TH1F*)fHist_fwd_feedD->Clone());
-        hist_fromCEP  = *((TH1F*)fHist_fwd_fromCEP->Clone());
-        hist_fromDiff = *((TH1F*)fHist_fwd_fromDiff->Clone());
-     } else if (mode==2){
-        hist_cd       = *((TH1F*)fHist_ad_CD->Clone());
-        hist_fd       = *((TH1F*)fHist_ad_feedD->Clone());
-        hist_fromCEP  = *((TH1F*)fHist_ad_fromCEP->Clone());
-        hist_fromDiff = *((TH1F*)fHist_ad_fromDiff->Clone());
-     } else {
-        hist_cd       = *((TH1F*)fHist_emc_CD->Clone());
-        hist_fd       = *((TH1F*)fHist_emc_feedD->Clone());
-        hist_fromCEP  = *((TH1F*)fHist_emc_fromCEP->Clone());
-        hist_fromDiff = *((TH1F*)fHist_emc_fromDiff->Clone());
-     }
-
+    TH1F hist_fromRho;
+    TH1F hist_fromKStar;
+    if (fShowCEPComponents){
+        // fill fromRho, from Kstar and from CEP histograms 
+        hist_fromCEP    = *((TH1F*)fHist_fromCEP->Clone());
+        hist_fromRho    = *((TH1F*)fHist_fromRho->Clone());
+        fHist_fromKStar = *((TH1F*)fHist_fromKStar->Clone());
+    }
     TCanvas* c = new TCanvas( ("c"+title).Data(), "c", 1500, 1000 );
     gStyle->SetOptStat(0);
     gPad->SetLogy();
@@ -219,7 +180,12 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
     Double_t xmax  = hist_cd.GetXaxis()->GetXmax();
     Int_t    nBins = hist_cd.GetNbinsX(); 
     TH1F signal_cd_fd(("signal"+title).Data(), "", nBins, xmin, xmax);
-    signal_cd_fd.Add(&hist_cd);
+    if (!fShowCEPComponent) signal_cd_fd.Add(&hist_cd);
+    else {
+        signal_cd_fd.Add(&hist_fromRho); 
+        signal_cd_fd.Add(&hist_fromKStar); 
+        signal_cd_fd.Add(&hist_fromCEP); 
+    }
     signal_cd_fd.Add(&hist_fd);
     // scale the hsitograms 
     Double_t scale_norm = 1./double(fTPCITSsignalEnries);
@@ -229,8 +195,12 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
     // Draw the histograms
     // later we care about the style
     signal_cd_fd.Draw("EP");
-    hist_cd.Draw("EP same");
     hist_fd.Draw("EP same");
+    if (fShowCEPComponents){
+        hist_fromRho.Draw("EP same"); 
+        hist_fromKStar.Draw("EP same"); 
+        hist_fromCEP.Draw("EP same"); 
+    } else hist_cd.Draw("EP same");
     /* signal_cd_fd.SetMaximum(1.5*signal_cd_fd.GetMaximum()); */
     signal_cd_fd.SetMaximum(1.);
     // maker style and color
@@ -302,8 +272,8 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
         /* latex.DrawLatex(1.42+add_toright,  lineScale*fixedLineLength, "f2, #omega(1420)"); */
         latex.DrawLatex(1.525+add_toright, lineScale*fixedLineLength, "f'1(1525)");
     } 
-    if(kapi)  latex.DrawLatex(0.892+add_toright,lineScale*fixedLineLength,"K*(892)");
-    if(piPro) latex.DrawLatex(1.115+add_toright,lineScale*fixedLineLength,"#Lambda^{0}(1115)");
+    if (kapi)  latex.DrawLatex(0.892+add_toright,lineScale*fixedLineLength,"K*(892)");
+    if (piPro) latex.DrawLatex(1.115+add_toright,lineScale*fixedLineLength,"#Lambda^{0}(1115)");
 
     TLine l;
     l.SetLineWidth(1.);
@@ -318,9 +288,15 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
     if (kapi)  l.DrawLine(0.892, 0.0, 0.892, fixedLineLength);
     if (piPro) l.DrawLine(1.115, 0.0, 1.115, fixedLineLength);
 
-    TString fd_str   = "Feed down: ";
-    TString full_str = "Full recon: ";
+    TString fd_str      = "Feed down: ";
+    TString full_str    = "Full recon: ";
+    TString fromCEP_str = "From CEP: ";
+    TString fromRho     = "From #rho: ";
+    TString fromKS      = "From K^{S}: ";
+    if (fShowCEPComponents) full_str = "Other full recon";
     Double_t fd_part  = double(hist_fd.Integral())/double(signal_cd_fd.Integral()) *100.;
+    Double_t rec_part = double(hist_cd.Integral())/double(signal_cd_fd.Integral()) *100.;
+    Double_t rec_part = double(hist_cd.Integral())/double(signal_cd_fd.Integral()) *100.;
     Double_t rec_part = double(hist_cd.Integral())/double(signal_cd_fd.Integral()) *100.;
     stringstream str_fd, str_cd;
     str_fd << fixed << setprecision(2) << fd_part;
@@ -339,6 +315,10 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
     leg->AddEntry( &signal_cd_fd, "CEP total", "ep"); 
     leg->AddEntry( &hist_cd, (full_str+cd_percent+"%").Data(), "ep"); 
     leg->AddEntry( &hist_fd, (fd_str+fd_percent+"%").Data(), "ep"); 
+    if (fShowCEPComponents){
+        leg->AddEntry( &hist_fromCEP,  (full_str+cd_percent+"%").Data(), "ep"); 
+        leg->AddEntry( &hist_fromDiff, (fd_str+fd_percent+"%").Data(), "ep"); 
+    }
     leg->SetBorderSize(0);
     leg->Draw();
 

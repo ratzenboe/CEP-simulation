@@ -28,22 +28,17 @@ class THistMaker
         TFile*              fFile;
         TTree*              fTree;
         // histograms
-        TH1F*               fHist_TPC_CD;
-        TH1F*               fHist_TPC_feedD;
-        TH1F*               fHist_TPC_fromCEP;
-        TH1F*               fHist_TPC_fromDiff;
-        TH1F*               fHist_fwd_CD;
-        TH1F*               fHist_fwd_feedD;
-        TH1F*               fHist_fwd_fromCEP;
-        TH1F*               fHist_fwd_fromDiff;
-        TH1F*               fHist_ad_CD;
-        TH1F*               fHist_ad_fromCEP;
-        TH1F*               fHist_ad_feedD;
-        TH1F*               fHist_ad_fromDiff;
-        TH1F*               fHist_emc_CD;
-        TH1F*               fHist_emc_feedD;
-        TH1F*               fHist_emc_fromCEP;
-        TH1F*               fHist_emc_fromDiff;
+        // - full reconstructed events are the same for every detector arangement
+        // -> therefore we only have to make detector individual hists for feed down
+        TH1F*               fHist_CD;
+        TH1F*               fHist_fromCEP;
+        TH1F*               fHist_fromKStar;
+        TH1F*               fHist_fromRho;
+        // Feed-down histograms:
+        TH1F*               fHist_TPC_feedDown;
+        TH1F*               fHist_fwd_feedDown;
+        TH1F*               fHist_ad_feedDown;
+        TH1F*               fHist_emc_feedDown;
         // scaling factor of the histogram
         Int_t               fTPCITSsignalEnries;
         // mass comparison for the AD case
