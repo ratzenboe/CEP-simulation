@@ -267,7 +267,13 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
     } else if (piPro) {
         xTitle = "p#pi";
         yTitle = "dN/dm_{p#pi}";
-    }
+    } else if (fourPi) {
+        xTitle = "4#pi";
+        yTitle = "dN/dm_{4#pi}";
+    } else if (fourKa) {
+        xTitle = "4K";
+        yTitle = "dN/dm_{4K}";
+    }     
     signal_cd_fd.GetXaxis()->SetTitle((xTitle+" invariant mass [GeV/c^{2}]").Data());
     signal_cd_fd.GetYaxis()->SetTitle("N");
     signal_cd_fd.GetYaxis()->SetTitle(yTitle.Data());
