@@ -307,14 +307,7 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, Bool_t sa
         }
     }
     fInvarMass = vtot.M();
-    if (saveEvtInfo && fPyt && fHasRightParticlesInTPCITS && fWholeEvtDetected){
-        os << "fWholeEvtDetected: " << fWholeEvtDetected << endl;
-        os << "fDiffrCode:        " << fDiffrCode        << endl;
-        os << "fHitInAD:          " << fHitInAD          << endl;
-        os << "fHitInForwardDets: " << fHitInForwardDets << endl;
-        (*fPythiaEvent).list(os);
-    }
-    // checkout if the particles come from the CEP or from another particle
+   // checkout if the particles come from the CEP or from another particle
     Int_t vectorSum(0), CEPMomCounter(0);
 
     for (unsigned i(0); i < pdgMomVec.size(); i++){
@@ -331,6 +324,10 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, Bool_t sa
                     std::not_equal_to<Int_t>() ) == pdgMomVec.end() ) fFromCEP = pdgMomVec[0];
         else fFromCEP = -1;
     } else fFromCEP = -1;
+    if (saveEvtInfo && fPyt && fHasRightParticlesInTPCITS && fWholeEvtDetected){
+        os << "fFromCEP: " << fFromCEP        << endl;
+        (*fPythiaEvent).list(os);
+    }
     // fill the tree
     if (fHasRightParticlesInTPCITS && tree->GetBranch("fHitInAD")) tree->Fill();
     PrintDebug("evt tree fill");

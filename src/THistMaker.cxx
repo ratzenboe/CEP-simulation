@@ -170,7 +170,7 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
         // fill fromRho, from Kstar and from CEP histograms 
         hist_fromCEP    = *((TH1F*)fHist_fromCEP->Clone());
         hist_fromRho    = *((TH1F*)fHist_fromRho->Clone());
-        hist_fromKStar = *((TH1F*)fHist_fromKStar->Clone());
+        hist_fromKStar  = *((TH1F*)fHist_fromKStar->Clone());
     }
     /* gROOT->ForceStyle(); */
     gStyle->SetCanvasBorderMode(0);
@@ -235,8 +235,8 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
         hist_fromRho.SetMarkerSize(1.2);
         // kstar
         hist_fromKStar.SetMarkerStyle(kCircle);
-        hist_fromRho.SetMarkerColor(8);
-        hist_fromRho.SetMarkerSize(1.2);
+        hist_fromKStar.SetMarkerColor(8);
+        hist_fromKStar.SetMarkerSize(1.2);
         // from CEP
         hist_fromCEP.SetMarkerStyle(kFullCross);
         hist_fromCEP.SetMarkerColor(6);
@@ -351,10 +351,10 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
     Double_t xleg1 = 0.714953;
     Double_t yleg1 = 0.873326;
     if (fShowCEPComponents){
-        xleg0 = 0.621495;
-        yleg0 = 0.61586;
-        xleg1 = 0.757677;
-        yleg1 = 0.887745;
+        xleg0 = 0.626168;
+        yleg0 = 0.61792;
+        xleg1 = 0.763017;
+        yleg1 = 0.889804;
     }
     TLegend* leg = new TLegend(xleg0, yleg0, xleg1, yleg1);
     if (!fShowCEPComponents) leg->SetHeader( "#splitline{pp #sqrt{s} = 14TeV}{Pythia - MBR (#varepsilon = 0.08)}" );
@@ -378,7 +378,7 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
     leg->Draw();
 
     c->SaveAs((outpath+title+fTitleSuffix+".pdf").Data());
-    /* delete c; */
+    delete c;
 }
 //________________________________________________________________________________________
 void THistMaker::Save2DMassHistInFile(TString outpath)
