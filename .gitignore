@@ -3,7 +3,11 @@
 
 # vim temporary files
 .*.*.swp
+.*.swp
 
 # .d and .pcm files from class compilation
 *.d
 *.pcm
+
+# compilation files
+*_ACLiC_*.*
