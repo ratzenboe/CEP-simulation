@@ -18,6 +18,7 @@
 #include <TLine.h>
 #include <TLegend.h>
 #include <TStyle.h>
+#include <TROOT.h>
 #include <iomanip> // setprecision
 #include <sstream> // stringstream
 #include "THistMaker.h"
@@ -49,10 +50,7 @@ THistMaker::THistMaker(TString inputFilePath, Int_t nBins, Double_t xlo, Double_
     if (fInFile.Contains("piKaon_"))      fTitleSuffix += "_piKaon";
     if (fInFile.Contains("piProton_"))    fTitleSuffix += "_piProton";
     if (fInFile.Contains("antipProton_")) fTitleSuffix += "_antiProton";
-    if (fInFile.Contains("fourka_")){
-        fTitleSuffix += "_fourKa";
-        fShowCEPComponents = true;
-    }
+    if (fInFile.Contains("fourka_"))      fTitleSuffix += "_fourKa";
     if (fInFile.Contains("fourpi_")){
         fTitleSuffix += "_fourPi";
         fShowCEPComponents = true;
@@ -107,7 +105,7 @@ THistMaker::THistMaker(TString inputFilePath, Int_t nBins, Double_t xlo, Double_
         if (fGammaInEMCal) continue;
         if (!fWholeEvtDetected)                       fHist_emc_feedDown->Fill(fInvarMass);
     }
-    fTPCITSsignalEnries += fHist_TPC_CD->GetEntries();
+    fTPCITSsignalEnries += fHist_CD->GetEntries();
     fTPCITSsignalEnries += fHist_TPC_feedDown->GetEntries();
     if (fShowCEPComponents) {
         fTPCITSsignalEnries += fHist_fromRho->GetEntries();
@@ -151,18 +149,20 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
     else title="EMCal";    
     Bool_t kaon = false, kapi = false, pion = false, piPro = false, pp = false,
            fourPi = false, fourKa = false;
-    if (fInFile.Contains("kaon_"))        kaon = true;
-    if (fInFile.Contains("pi_"))          pion = true;
-    if (fInFile.Contains("piKaon_"))      kapi = true;
-    if (fInFile.Contains("piProton_"))    piPro = true;
-    if (fInFile.Contains("antipProton_")) pp = true;
+    if (fInFile.Contains("kaon_"))        kaon   = true;
+    if (fInFile.Contains("pi_"))          pion   = true;
+    if (fInFile.Contains("piKaon_"))      kapi   = true;
+    if (fInFile.Contains("piProton_"))    piPro  = true;
+    if (fInFile.Contains("antipProton_")) pp     = true;
+    if (fInFile.Contains("fourpi_"))       fourPi = true;
+    if (fInFile.Contains("fourka_"))       fourKa = true;
     // we only care for one plot at a time
-    TH1F hist_cd  = *((TH1F*)fHist_TPC_CD->Clone());
+    TH1F hist_cd  = *((TH1F*)fHist_CD->Clone());
     TH1F hist_fd;
-    if      (mode==0) hist_fd = *((TH1F*)fHist_TPC_feedD->Clone());
-    else if (mode==1) hist_fd = *((TH1F*)fHist_fwd_feedD->Clone());
-    else if (mode==2) hist_fd = *((TH1F*)fHist_ad_feedD->Clone());
-    else              hist_fd = *((TH1F*)fHist_emc_feedD->Clone());
+    if      (mode==0) hist_fd = *((TH1F*)fHist_TPC_feedDown->Clone());
+    else if (mode==1) hist_fd = *((TH1F*)fHist_fwd_feedDown->Clone());
+    else if (mode==2) hist_fd = *((TH1F*)fHist_ad_feedDown->Clone());
+    else              hist_fd = *((TH1F*)fHist_emc_feedDown->Clone());
     TH1F hist_fromCEP;
     TH1F hist_fromRho;
     TH1F hist_fromKStar;
@@ -170,62 +170,91 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
         // fill fromRho, from Kstar and from CEP histograms 
         hist_fromCEP    = *((TH1F*)fHist_fromCEP->Clone());
         hist_fromRho    = *((TH1F*)fHist_fromRho->Clone());
-        fHist_fromKStar = *((TH1F*)fHist_fromKStar->Clone());
+        hist_fromKStar = *((TH1F*)fHist_fromKStar->Clone());
     }
-    TCanvas* c = new TCanvas( ("c"+title).Data(), "c", 1500, 1000 );
+    /* gROOT->ForceStyle(); */
+    gStyle->SetCanvasBorderMode(0);
+    gStyle->SetPadBottomMargin(0.15);
+    gStyle->SetPadLeftMargin(0.15); 
     gStyle->SetOptStat(0);
+    gStyle->SetTextSizePixels(215);
+    gStyle->SetTextFont(42); 
+ 
+    TCanvas* c = new TCanvas( ("c"+title).Data(), "c", 1500, 1000 );
     gPad->SetLogy();
     // first we make the signal histograms = add CD + feeddown (as we only regard CEP)
     Double_t xmin  = hist_cd.GetXaxis()->GetXmin();
     Double_t xmax  = hist_cd.GetXaxis()->GetXmax();
     Int_t    nBins = hist_cd.GetNbinsX(); 
     TH1F signal_cd_fd(("signal"+title).Data(), "", nBins, xmin, xmax);
-    if (!fShowCEPComponent) signal_cd_fd.Add(&hist_cd);
-    else {
+    // in this case hist_cd are all fully recon CD evts 
+    // that come from at least 2 different mother particles (pdg wise)
+    signal_cd_fd.Add(&hist_cd);
+    signal_cd_fd.Add(&hist_fd);
+    if (fShowCEPComponents){
         signal_cd_fd.Add(&hist_fromRho); 
         signal_cd_fd.Add(&hist_fromKStar); 
         signal_cd_fd.Add(&hist_fromCEP); 
     }
-    signal_cd_fd.Add(&hist_fd);
     // scale the hsitograms 
     Double_t scale_norm = 1./double(fTPCITSsignalEnries);
     signal_cd_fd.Scale(scale_norm);
     hist_cd.Scale(scale_norm);
     hist_fd.Scale(scale_norm);
+    if (fShowCEPComponents){
+        hist_fromRho.Scale(scale_norm);
+        hist_fromKStar.Scale(scale_norm);
+        hist_fromCEP.Scale(scale_norm);
+    } 
     // Draw the histograms
     // later we care about the style
     signal_cd_fd.Draw("EP");
     hist_fd.Draw("EP same");
+    hist_cd.Draw("EP same");
     if (fShowCEPComponents){
         hist_fromRho.Draw("EP same"); 
         hist_fromKStar.Draw("EP same"); 
         hist_fromCEP.Draw("EP same"); 
-    } else hist_cd.Draw("EP same");
+    } 
     /* signal_cd_fd.SetMaximum(1.5*signal_cd_fd.GetMaximum()); */
     signal_cd_fd.SetMaximum(1.);
     // maker style and color
     signal_cd_fd.SetMarkerStyle(kFullCircle);
     hist_cd.SetMarkerStyle(kFullSquare);
     hist_fd.SetMarkerStyle(kFullTriangleUp);
-
     signal_cd_fd.SetMarkerColor(1);
     signal_cd_fd.SetMarkerSize(1.2);
     hist_cd.SetMarkerColor(9);
     hist_cd.SetMarkerSize(1.2);
     hist_fd.SetMarkerColor(2);
-    hist_fd.SetMarkerSize(1.2);
+    hist_fd.SetMarkerSize(1.2);    
+    if (fShowCEPComponents){
+        // rho
+        hist_fromRho.SetMarkerStyle(kFullTriangleDown);
+        hist_fromRho.SetMarkerColor(7);
+        hist_fromRho.SetMarkerSize(1.2);
+        // kstar
+        hist_fromKStar.SetMarkerStyle(kCircle);
+        hist_fromRho.SetMarkerColor(8);
+        hist_fromRho.SetMarkerSize(1.2);
+        // from CEP
+        hist_fromCEP.SetMarkerStyle(kFullCross);
+        hist_fromCEP.SetMarkerColor(6);
+        hist_fromCEP.SetMarkerSize(1.2);
+    } 
 
+    // axis and title sizes 
     signal_cd_fd.GetYaxis()->SetLabelSize(0.045);
     signal_cd_fd.GetXaxis()->SetLabelSize(0.045);
 
-    signal_cd_fd.GetXaxis()->SetLabelOffset(0.004);
-    signal_cd_fd.GetYaxis()->SetLabelOffset(0.004);
+    signal_cd_fd.GetXaxis()->SetLabelOffset(0.005);
+    signal_cd_fd.GetYaxis()->SetLabelOffset(0.005);
 
     signal_cd_fd.GetXaxis()->SetTitleSize(0.05);
     signal_cd_fd.GetYaxis()->SetTitleSize(0.05);
 
-    signal_cd_fd.GetYaxis()->SetTitleOffset(0.89);
-    signal_cd_fd.GetXaxis()->SetTitleOffset(0.88);
+    signal_cd_fd.GetYaxis()->SetTitleOffset(1.);
+    signal_cd_fd.GetXaxis()->SetTitleOffset(1.);
 
     TString xTitle, yTitle;
     if (kaon){
@@ -245,7 +274,6 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
         yTitle = "dN/dm_{4K}";
     }     
     signal_cd_fd.GetXaxis()->SetTitle((xTitle+" invariant mass [GeV/c^{2}]").Data());
-    signal_cd_fd.GetYaxis()->SetTitle("N");
     signal_cd_fd.GetYaxis()->SetTitle(yTitle.Data());
     // SetTitle has to be called after setting the xAxis title!!!!
 
@@ -289,42 +317,68 @@ void THistMaker::SaveHistsInFile(Int_t mode, TString outpath)
     if (piPro) l.DrawLine(1.115, 0.0, 1.115, fixedLineLength);
 
     TString fd_str      = "Feed down: ";
-    TString full_str    = "Full recon: ";
+    TString cd_str      = "Full recon";
     TString fromCEP_str = "From CEP: ";
-    TString fromRho     = "From #rho: ";
-    TString fromKS      = "From K^{S}: ";
-    if (fShowCEPComponents) full_str = "Other full recon";
-    Double_t fd_part  = double(hist_fd.Integral())/double(signal_cd_fd.Integral()) *100.;
-    Double_t rec_part = double(hist_cd.Integral())/double(signal_cd_fd.Integral()) *100.;
-    Double_t rec_part = double(hist_cd.Integral())/double(signal_cd_fd.Integral()) *100.;
-    Double_t rec_part = double(hist_cd.Integral())/double(signal_cd_fd.Integral()) *100.;
-    stringstream str_fd, str_cd;
+    TString fromRho_str = "From #rho: ";
+    TString fromKS_str  = "From K^{0}_{S}: ";
+    if (fShowCEPComponents) cd_str += " rest: ";
+    else cd_str += ": ";
+    Double_t fd_part = double(hist_fd.Integral())/double(signal_cd_fd.Integral()) *100.;
+    Double_t cd_part = double(hist_cd.Integral())/double(signal_cd_fd.Integral()) *100.;     
+    Double_t rho_part, kstar_part, fromCEP_part;
+    if (fShowCEPComponents) {
+        rho_part     = double(hist_fromRho.Integral())/double(signal_cd_fd.Integral()) *100.;
+        kstar_part   = double(hist_fromKStar.Integral())/double(signal_cd_fd.Integral()) *100.;
+        fromCEP_part = double(hist_fromCEP.Integral())/double(signal_cd_fd.Integral()) *100.;
+    } 
+    stringstream str_fd, str_cd, str_fromCEP, str_rho, str_ks;
+    string fd_percent, cd_percent, fromCEP_percent, rho_percent, ks_percent;
     str_fd << fixed << setprecision(2) << fd_part;
-    string fd_percent = str_fd.str();
-    str_cd << fixed << setprecision(2) << rec_part;
-    string cd_percent = str_cd.str();
+    fd_percent = str_fd.str();
+    str_cd << fixed << setprecision(2) << cd_part;
+    cd_percent = str_cd.str();
+    if (fShowCEPComponents){
+        str_fromCEP << fixed << setprecision(2) << fromCEP_part;
+        fromCEP_percent = str_fromCEP.str();
+        str_rho << fixed << setprecision(2) << rho_part;
+        rho_percent = str_rho.str();
+        str_ks << fixed << setprecision(2) << kstar_part;
+        ks_percent = str_ks.str();
+    }
 
     Double_t xleg0 = 0.560748;
     Double_t yleg0 = 0.523172;
     Double_t xleg1 = 0.714953;
     Double_t yleg1 = 0.873326;
+    if (fShowCEPComponents){
+        xleg0 = 0.621495;
+        yleg0 = 0.61586;
+        xleg1 = 0.757677;
+        yleg1 = 0.887745;
+    }
     TLegend* leg = new TLegend(xleg0, yleg0, xleg1, yleg1);
-    leg->SetHeader( "#splitline{pp #sqrt{s} = 14TeV}{Pythia - MBR (#varepsilon = 0.08)}" );
+    if (!fShowCEPComponents) leg->SetHeader( "#splitline{pp #sqrt{s} = 14TeV}{Pythia - MBR (#varepsilon = 0.08)}" );
+    else {
+        latex.SetTextSize(0.05);
+        latex.SetTextColor(kBlack);
+        latex.SetTextAngle(0);
+        latex.DrawLatex(0.8, 0.2, "#splitline{pp #sqrt{s} = 14TeV}{Pythia - MBR (#varepsilon = 0.08)}" );
+    }
     leg->SetFillStyle(0);
-    leg->SetTextSize(0.05);
+    leg->SetTextSize(0.04);
     leg->AddEntry( &signal_cd_fd, "CEP total", "ep"); 
-    leg->AddEntry( &hist_cd, (full_str+cd_percent+"%").Data(), "ep"); 
     leg->AddEntry( &hist_fd, (fd_str+fd_percent+"%").Data(), "ep"); 
     if (fShowCEPComponents){
-        leg->AddEntry( &hist_fromCEP,  (full_str+cd_percent+"%").Data(), "ep"); 
-        leg->AddEntry( &hist_fromDiff, (fd_str+fd_percent+"%").Data(), "ep"); 
-    }
+        leg->AddEntry( &hist_fromCEP,   (fromCEP_str+fromCEP_percent+"%").Data(), "ep"); 
+        leg->AddEntry( &hist_fromRho,   (fromRho_str+rho_percent+"%").Data(), "ep"); 
+        leg->AddEntry( &hist_fromKStar, (fromKS_str +ks_percent+"%").Data(), "ep"); 
+    } 
+    leg->AddEntry( &hist_cd, (cd_str+cd_percent+"%").Data(), "ep"); 
     leg->SetBorderSize(0);
     leg->Draw();
 
     c->SaveAs((outpath+title+fTitleSuffix+".pdf").Data());
-
-    delete c;
+    /* delete c; */
 }
 //________________________________________________________________________________________
 void THistMaker::Save2DMassHistInFile(TString outpath)
