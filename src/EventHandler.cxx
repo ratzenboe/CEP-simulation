@@ -299,7 +299,7 @@ void EventHandler::AnalyseEvent(Int_t iEvent, TTree* tree, Int_t mode, Bool_t sa
                        fHasRightParticlesInTPCITS = (Npi==4 && Nka==0 && Nprot==0) ? true : false;
                        break;
             case fourka:   
-                       fHasRightParticlesInTPCITS = (Npi==4 && Nka==0 && Nprot==0) ? true : false;
+                       fHasRightParticlesInTPCITS = (Npi==0 && Nka==4 && Nprot==0) ? true : false;
                        break;        
             case pikafour:   
                        fHasRightParticlesInTPCITS = (Npi==2 && Nka==2 && Nprot==0) ? true : false;
